@@ -50,3 +50,19 @@ export async function requireAdmin(req, leagueId = null) {
   if (member?.role === "ADMIN") return auth;
   return { ok: false, status: 403, error: "Forbidden" };
 }
+export async function requireCaptain(req, leagueId) {
+  const auth = await requireAuth(req);
+  if (!auth.ok) return auth;
+
+  if (isEnvAdminEmail(auth.user.email)) return auth;
+
+  const member = await prisma.leagueMember.findUnique({
+    where: {
+      leagueId_userId: { leagueId, userId: auth.user.id }
+    },
+    select: { role: true }
+  });
+
+  if (member?.role === "CAPTAIN" || member?.role === "ADMIN") return auth;
+  return { ok: false, status: 403, error: "Forbidden" };
+}
