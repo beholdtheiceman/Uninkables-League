@@ -4,11 +4,15 @@ import { json, readJson } from "../_lib/http.js";
 import { getSession } from "../_lib/auth.js";
 
 function adminEmails() {
+  // Temporary bootstrap admin(s) to unblock setup when env vars are not yet configured.
+  // Prefer using PLAYHUB_ADMIN_EMAILS in Vercel long-term.
+  const bootstrapAdmins = ["sportlarry@gmail.com"];
   const raw = process.env.PLAYHUB_ADMIN_EMAILS || "";
-  return raw
+  const fromEnv = raw
     .split(",")
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
+  return Array.from(new Set([...fromEnv, ...bootstrapAdmins.map((e) => e.toLowerCase())]));
 }
 
 async function requireAdmin(req) {
