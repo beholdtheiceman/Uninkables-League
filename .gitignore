@@ -1,9 +1,23 @@
-﻿# OS / tooling
+# Dependencies
+node_modules/
+
+# Build output
+/dist/
+.\dist/
+
+# Vercel
+.vercel/
+
+# Env
+.env
+.env.*
+
+# Logs
+*.log
+
+# OS / tooling
 .DS_Store
 Thumbs.db
 desktop.ini
 .vscode/
 .idea/
-
-# Logs
-*.log

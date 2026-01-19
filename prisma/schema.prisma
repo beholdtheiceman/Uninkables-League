@@ -153,15 +153,17 @@ model Season {
 }
 
 model SeasonTeam {
-  id             String   @id @default(uuid())
-  seasonId       String
-  name           String
-  captainUserId  String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id            String   @id @default(uuid())
+  seasonId      String
+  name          String
+  captainUserId String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  season  Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
-  captain User   @relation("CaptainTeams", fields: [captainUserId], references: [id], onDelete: Restrict)
+  rosterSubmittedAt DateTime?
+  rosterApprovedAt  DateTime?
+  season            Season    @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  captain           User      @relation("CaptainTeams", fields: [captainUserId], references: [id], onDelete: Restrict)
 
   rosterSlots SeasonRosterSlot[]
   points      PointsEvent[]
@@ -169,9 +171,9 @@ model SeasonTeam {
   matchupsAsTeamA WeekMatchup[] @relation("MatchupTeamA")
   matchupsAsTeamB WeekMatchup[] @relation("MatchupTeamB")
 
+  @@unique([seasonId, name])
   @@index([seasonId])
   @@index([captainUserId])
-  @@unique([seasonId, name])
 }
 
 model SeasonRosterSlot {
@@ -179,7 +181,8 @@ model SeasonRosterSlot {
   seasonTeamId String
   slotIndex    Int
   userId       String
-  mmrAtLock    Int
+  mmrAtSubmit  Int
+  mmrAtLock    Int?
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
 
@@ -203,7 +206,7 @@ model SeasonWeek {
 
   createdAt DateTime @default(now())
 
-  season   Season       @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  season   Season        @relation(fields: [seasonId], references: [id], onDelete: Cascade)
   matchups WeekMatchup[]
   points   PointsEvent[]
 
@@ -212,12 +215,12 @@ model SeasonWeek {
 }
 
 model WeekMatchup {
-  id           String      @id @default(uuid())
+  id           String     @id @default(uuid())
   seasonWeekId String
   teamAId      String
   teamBId      String
-  state        MatchState  @default(DRAFT)
-  createdAt    DateTime    @default(now())
+  state        MatchState @default(DRAFT)
+  createdAt    DateTime   @default(now())
 
   seasonWeek SeasonWeek @relation(fields: [seasonWeekId], references: [id], onDelete: Cascade)
   teamA      SeasonTeam @relation("MatchupTeamA", fields: [teamAId], references: [id], onDelete: Restrict)
@@ -242,18 +245,18 @@ model SeedPairing {
   mmrAAtCreate Int
   mmrBAtCreate Int
 
-  scheduledFor DateTime?
+  scheduledFor             DateTime?
   scheduleProposedByUserId String?
-  scheduleConfirmedByA Boolean @default(false)
-  scheduleConfirmedByB Boolean @default(false)
+  scheduleConfirmedByA     Boolean   @default(false)
+  scheduleConfirmedByB     Boolean   @default(false)
 
-  gamesWonA Int @default(0)
-  gamesWonB Int @default(0)
-  reportedByUserId String?
-  reportedAt DateTime?
-  confirmedByOpponent Boolean @default(false)
+  gamesWonA           Int       @default(0)
+  gamesWonB           Int       @default(0)
+  reportedByUserId    String?
+  reportedAt          DateTime?
+  confirmedByOpponent Boolean   @default(false)
 
-  matchup  WeekMatchup @relation(fields: [matchupId], references: [id], onDelete: Cascade)
+  matchup WeekMatchup @relation(fields: [matchupId], references: [id], onDelete: Cascade)
   playerA User        @relation("PairingPlayerA", fields: [playerAId], references: [id], onDelete: Restrict)
   playerB User        @relation("PairingPlayerB", fields: [playerBId], references: [id], onDelete: Restrict)
 
@@ -272,7 +275,7 @@ model PointsEvent {
   type      PointsEventType
   points    Int
   reason    String?
-  createdAt DateTime @default(now())
+  createdAt DateTime        @default(now())
 
   season Season      @relation(fields: [seasonId], references: [id], onDelete: Cascade)
   week   SeasonWeek? @relation(fields: [weekId], references: [id], onDelete: SetNull)
@@ -287,7 +290,7 @@ model PointsEvent {
 }
 
 model MMREvent {
-  id        String     @id @default(uuid())
+  id        String       @id @default(uuid())
   leagueId  String
   userId    String
   type      MMREventType
@@ -295,7 +298,7 @@ model MMREvent {
   mmrBefore Int
   mmrAfter  Int
   reason    String?
-  createdAt DateTime @default(now())
+  createdAt DateTime     @default(now())
 
   rating LeagueRating? @relation(fields: [leagueId, userId], references: [leagueId, userId], onDelete: Cascade)
 
