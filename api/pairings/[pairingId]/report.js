@@ -27,12 +27,12 @@ export default async function handler(req, res) {
     where: { id: pairingId },
     select: {
       id: true,
+      state: true,
       playerAId: true,
       playerBId: true,
       gamesWonA: true,
       gamesWonB: true,
       reportedByUserId: true,
-      confirmedByOpponent: true,
       matchup: {
         select: {
           seasonWeek: {
@@ -54,6 +54,10 @@ export default async function handler(req, res) {
   const isPlayer = auth.user.id === pairing.playerAId || auth.user.id === pairing.playerBId;
   const admin = await requireAdmin(req, leagueId);
   if (!isPlayer && !admin.ok) return json(res, 403, { error: "Forbidden" });
+
+  if (pairing.state === "FINAL" && !admin.ok) {
+    return json(res, 409, { error: "Pairing already finalized" });
+  }
 
   if (weekState !== "OPEN" && !admin.ok) {
     return json(res, 409, { error: "Week is not open for reporting" });
