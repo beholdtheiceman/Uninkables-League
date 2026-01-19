@@ -1,19 +1,50 @@
-﻿# Uninkables League Hub
+# Uninkables League Hub
 
-Working repo for league hub docs and implementation notes.
+Vite + React frontend with Vercel serverless APIs in `api/` and Postgres/Prisma in `prisma/`.
 
 ## Branching
-- **main**: production / stable
-- **develop**: integration / testing
+- **main**: production
+- **develop**: integration/testing
 
-## Recommended workflow
+## Local Setup
 
-- Create feature branches from `develop`: `feature/<name>`
-- Open PRs into `develop` for testing/review
-- When ready to release, open a PR from `develop` -> `main`
+### 1) Install
 
-## Suggested GitHub settings (optional)
+```bash
+npm install
+```
 
-In GitHub -> Settings -> Branches:
-- Protect `main`: require PR, block direct pushes, require status checks (if you add CI)
-- Protect `develop` (optional): require PR
+### 2) Environment
+Create a `.env` file (see `env.example`):
+
+- `DATABASE_URL` (Postgres)
+- `JWT_SECRET`
+- `BCRYPT_COST` (optional)
+- `PLAYHUB_ADMIN_EMAILS` (comma-separated emails)
+
+### 3) Prisma
+
+```bash
+npx prisma generate
+npx prisma migrate dev
+```
+
+### 4) Run
+Frontend (Vite):
+
+```bash
+npm run dev
+```
+
+API routes are proxied under `/api` to `http://localhost:3000` via `vite.config.js`.
+
+## Vercel Deploy
+- This repo includes a `vercel.json` configured for Vite + SPA rewrites.
+- Ensure your Vercel project is deploying the **main** branch for production.
+
+## Key Admin Flows (MVP)
+- Create League/Season (Admin tab)
+- Create teams + submit rosters (Teams tab)
+- Approve rosters + generate full schedule + open a week (Admin tab)
+- Players schedule/report/confirm in "This Week"
+- Admin can resolve disputes/force results, approve subs, then finalize the week
