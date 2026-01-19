@@ -156,7 +156,32 @@ export default function AdminTab({ leagueId, seasonId, onLeagueChanged, onSeason
       </div>
 
       <div className="card" style={{ display: "grid", gap: 10 }}>
-        <strong>Generate Week (test generator)</strong>
+        
+      <div className="card" style={{ display: "grid", gap: 10 }}>
+        <strong>Finalize Current Week</strong>
+        <div style={{ fontSize: 12, opacity: 0.8 }}>
+          Writes points/MMR ledgers and locks the current OPEN week to FINAL (requires all pairings FINAL).
+        </div>
+        <button
+          disabled={loading || !seasonId}
+          onClick={async () => {
+            if (!seasonId) return;
+            setLoading(true);
+            setErr(null);
+            try {
+              const cur = await fetchJson(`/api/seasons/${seasonId}/weeks/current`);
+              if (!cur.week?.id) throw new Error("No OPEN week found");
+              await fetchJson(`/api/weeks/${cur.week.id}/finalize`, { method: "POST" });
+            } catch (e) {
+              setErr(e.message);
+            } finally {
+              setLoading(false);
+            }
+          }}
+        >
+          Finalize
+        </button>
+      </div>\n      <strong>Generate Week (test generator)</strong>
         <div style={{ fontSize: 12, opacity: 0.8 }}>
           Creates matchups + seeded pairings by slotIndex for approved rosters. (Placeholder pairing schedule.)
         </div>
