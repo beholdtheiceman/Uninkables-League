@@ -1,4 +1,4 @@
-﻿import { z } from "zod";
+import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { prisma } from "../_lib/db.js";
 import { json, readJson } from "../_lib/http.js";
@@ -11,19 +11,28 @@ const Body = z.object({
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return json(res, 405, { error: "Method not allowed" });
-  const body = Body.parse(await readJson(req));
 
-  const existing = await prisma.user.findUnique({ where: { email: body.email } });
-  if (existing) return json(res, 409, { error: "Email already registered" });
+  if (!process.env.JWT_SECRET) return json(res, 500, { error: "Server misconfigured: missing JWT_SECRET" });
+  if (!process.env.DATABASE_URL) return json(res, 500, { error: "Server misconfigured: missing DATABASE_URL" });
 
-  const cost = Number(process.env.BCRYPT_COST || 10);
-  const passwordHash = await bcrypt.hash(body.password, cost);
+  try {
+    const body = Body.parse(await readJson(req));
 
-  const user = await prisma.user.create({
-    data: { email: body.email, passwordHash },
-    select: { id: true, email: true }
-  });
+    const existing = await prisma.user.findUnique({ where: { email: body.email } });
+    if (existing) return json(res, 409, { error: "Email already registered" });
 
-  setSession(res, { userId: user.id });
-  return json(res, 200, { user });
+    const cost = Number(process.env.BCRYPT_COST || 10);
+    const passwordHash = await bcrypt.hash(body.password, cost);
+
+    const user = await prisma.user.create({
+      data: { email: body.email, passwordHash },
+      select: { id: true, email: true }
+    });
+
+    setSession(res, { userId: user.id });
+    return json(res, 200, { user });
+  } catch (e) {
+    console.error(e);
+    return json(res, 500, { error: e?.message || "Server error" });
+  }
 }
