@@ -14,6 +14,7 @@ export default function AdminTab({ leagueId, seasonId, onLeagueChanged, onSeason
 
   const [teams, setTeams] = useState([]);
   const [weekDetail, setWeekDetail] = useState(null);
+  const [subRequests, setSubRequests] = useState([]);
 
   async function loadTeams() {
     if (!seasonId) return;
@@ -48,9 +49,24 @@ export default function AdminTab({ leagueId, seasonId, onLeagueChanged, onSeason
     }
   }
 
+  async function loadSubRequests() {
+    if (!seasonId) return;
+    setLoading(true);
+    setErr(null);
+    try {
+      const d = await fetchJson(`/api/seasons/${seasonId}/sub-requests`);
+      setSubRequests(d.requests || []);
+    } catch (e) {
+      setErr(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
     loadTeams();
     loadCurrentWeek();
+    loadSubRequests();
   }, [seasonId]);
 
   const unapprovedTeams = useMemo(
@@ -122,6 +138,23 @@ export default function AdminTab({ leagueId, seasonId, onLeagueChanged, onSeason
     try {
       await fetchJson(`/api/seasons/${seasonId}/teams/${teamId}/roster/approve`, { method: "POST" });
       await loadTeams();
+    } catch (e) {
+      setErr(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function approveSubRequest(pairingId, requestId) {
+    setLoading(true);
+    setErr(null);
+    try {
+      await fetchJson(`/api/pairings/${pairingId}/sub-approve`, {
+        method: "POST",
+        body: JSON.stringify({ requestId })
+      });
+      await loadCurrentWeek();
+      await loadSubRequests();
     } catch (e) {
       setErr(e.message);
     } finally {
@@ -263,6 +296,35 @@ export default function AdminTab({ leagueId, seasonId, onLeagueChanged, onSeason
           </div>
         ) : (
           <div style={{ opacity: 0.8 }}>No rosters pending approval.</div>
+        )}
+      </div>
+
+      <div className="card" style={{ display: "grid", gap: 10 }}>
+        <strong>Substitution Requests</strong>
+        <button disabled={loading || !seasonId} onClick={loadSubRequests}>Refresh</button>
+        {!seasonId ? (
+          <div style={{ opacity: 0.8 }}>Select a season above.</div>
+        ) : subRequests.length ? (
+          <div style={{ display: "grid", gap: 8 }}>
+            {subRequests.map((r) => (
+              <div key={r.id} className="card" style={{ padding: 12 }}>
+                <div style={{ fontWeight: 700 }}>{r.status} â€” replaces {r.replacesSide}</div>
+                <div style={{ fontSize: 12, opacity: 0.85, marginTop: 4 }}>Pairing: {r.pairingId}</div>
+                <div style={{ fontSize: 12, opacity: 0.85, marginTop: 4 }}>
+                  Replace: {r.replacesUser?.email} ({r.replacedMmrAtRequest}) â†’ Sub: {r.subUser?.email} ({r.subMmrAtRequest})
+                </div>
+                <div style={{ fontSize: 12, opacity: 0.85, marginTop: 4 }}>Requested by: {r.requestedBy?.email}</div>
+                {r.note ? <div style={{ fontSize: 12, opacity: 0.85, marginTop: 4 }}>Note: {r.note}</div> : null}
+                {r.status === "PENDING" ? (
+                  <div className="row" style={{ justifyContent: "flex-end", marginTop: 8 }}>
+                    <button disabled={loading} onClick={() => approveSubRequest(r.pairingId, r.id)}>Approve</button>
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ opacity: 0.8 }}>No substitution requests yet.</div>
         )}
       </div>
 
