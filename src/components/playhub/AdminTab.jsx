@@ -8,7 +8,9 @@ export default function AdminTab({ leagueId, seasonId, onLeagueChanged, onSeason
   const [leagueName, setLeagueName] = useState("");
   const [leagueDescription, setLeagueDescription] = useState("");
   const [seasonName, setSeasonName] = useState("");
-  const [weekIndex, setWeekIndex] = useState("1");
+
+  const [weekIndex, setWeekIndex] = useState("1"); // legacy test generator
+  const [openWeekIndex, setOpenWeekIndex] = useState("1");
 
   const [teams, setTeams] = useState([]);
   const [weekDetail, setWeekDetail] = useState(null);
@@ -159,7 +161,43 @@ export default function AdminTab({ leagueId, seasonId, onLeagueChanged, onSeason
     }
   }
 
-  async function generateWeek() {
+  async function generateFullSchedule(overwrite) {
+    if (!seasonId) return;
+    setLoading(true);
+    setErr(null);
+    try {
+      await fetchJson(`/api/seasons/${seasonId}/weeks/generate-schedule`, {
+        method: "POST",
+        body: JSON.stringify({ overwrite: Boolean(overwrite) })
+      });
+    } catch (e) {
+      setErr(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function openWeek() {
+    if (!seasonId) return;
+    const wi = Number(openWeekIndex);
+    if (!Number.isInteger(wi) || wi < 1) {
+      setErr("Open week index must be a positive integer");
+      return;
+    }
+    setLoading(true);
+    setErr(null);
+    try {
+      await fetchJson(`/api/seasons/${seasonId}/weeks/${wi}/open`, { method: "POST" });
+      await loadCurrentWeek();
+    } catch (e) {
+      setErr(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // legacy test generator kept for quick testing
+  async function generateWeekTest() {
     if (!seasonId) return;
     const wi = Number(weekIndex);
     if (!Number.isInteger(wi) || wi < 1) {
@@ -229,11 +267,38 @@ export default function AdminTab({ leagueId, seasonId, onLeagueChanged, onSeason
       </div>
 
       <div className="card" style={{ display: "grid", gap: 10 }}>
+        <strong>Generate Full Schedule (Round Robin)</strong>
+        <div style={{ fontSize: 12, opacity: 0.8 }}>
+          Creates DRAFT weeks + matchups + seeded pairings for the season using approved rosters.
+        </div>
+        <div className="row" style={{ flexWrap: "wrap" }}>
+          <button disabled={loading || !seasonId} onClick={() => generateFullSchedule(false)}>Generate</button>
+          <button disabled={loading || !seasonId} onClick={() => generateFullSchedule(true)}>Overwrite & Regenerate</button>
+        </div>
+      </div>
+
+      <div className="card" style={{ display: "grid", gap: 10 }}>
+        <strong>Open Week (Admin)</strong>
+        <div style={{ fontSize: 12, opacity: 0.8 }}>
+          Sets the chosen week to OPEN and locks any currently-open week. (No playing ahead.)
+        </div>
+        <div className="row">
+          <input value={openWeekIndex} onChange={(e) => setOpenWeekIndex(e.target.value)} placeholder="Week to open" />
+          <button disabled={loading || !seasonId} onClick={openWeek}>Open</button>
+          <button disabled={loading || !seasonId} onClick={loadCurrentWeek}>Refresh</button>
+        </div>
+        {weekDetail ? (
+          <div style={{ fontSize: 12, opacity: 0.85 }}>Current OPEN week: {weekDetail.weekIndex}</div>
+        ) : (
+          <div style={{ fontSize: 12, opacity: 0.85 }}>Current OPEN week: none</div>
+        )}
+      </div>
+
+      <div className="card" style={{ display: "grid", gap: 10 }}>
         <strong>Resolve Pairings (Admin)</strong>
         <div style={{ fontSize: 12, opacity: 0.8 }}>
           Force-finalize unconfirmed/disputed pairings so week finalization can proceed.
         </div>
-        <button disabled={loading || !seasonId} onClick={loadCurrentWeek}>Refresh current week</button>
 
         {!seasonId ? (
           <div style={{ opacity: 0.8 }}>Select a season above.</div>
@@ -280,11 +345,11 @@ export default function AdminTab({ leagueId, seasonId, onLeagueChanged, onSeason
       <div className="card" style={{ display: "grid", gap: 10 }}>
         <strong>Generate Week (test generator)</strong>
         <div style={{ fontSize: 12, opacity: 0.8 }}>
-          Creates matchups + seeded pairings by slotIndex for approved rosters. (Placeholder pairing schedule.)
+          Legacy single-week generator (pairs teams alphabetically). Prefer "Generate Full Schedule".
         </div>
         <div className="row">
           <input value={weekIndex} onChange={(e) => setWeekIndex(e.target.value)} placeholder="Week index" />
-          <button disabled={loading || !seasonId} onClick={generateWeek}>Generate</button>
+          <button disabled={loading || !seasonId} onClick={generateWeekTest}>Generate & Open</button>
         </div>
       </div>
     </div>
