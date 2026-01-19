@@ -54,6 +54,12 @@ enum MMREventType {
   INITIAL_RATING
 }
 
+enum SubRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
@@ -72,6 +78,11 @@ model User {
   pairingsAsB SeedPairing[] @relation("PairingPlayerB")
 
   pointsEvents PointsEvent[]
+
+  subRequestsMade       SubstitutionRequest[] @relation("SubReqRequestedBy")
+  subRequestsDecided    SubstitutionRequest[] @relation("SubReqDecidedBy")
+  subRequestsAsSub      SubstitutionRequest[] @relation("SubReqSubUser")
+  subRequestsAsReplaced SubstitutionRequest[] @relation("SubReqReplacesUser")
 }
 
 model League {
@@ -145,9 +156,10 @@ model Season {
 
   league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
 
-  teams  SeasonTeam[]
-  weeks  SeasonWeek[]
-  points PointsEvent[]
+  teams       SeasonTeam[]
+  weeks       SeasonWeek[]
+  points      PointsEvent[]
+  subRequests SubstitutionRequest[]
 
   @@index([leagueId])
 }
@@ -162,8 +174,9 @@ model SeasonTeam {
 
   rosterSubmittedAt DateTime?
   rosterApprovedAt  DateTime?
-  season            Season    @relation(fields: [seasonId], references: [id], onDelete: Cascade)
-  captain           User      @relation("CaptainTeams", fields: [captainUserId], references: [id], onDelete: Restrict)
+
+  season  Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  captain User   @relation("CaptainTeams", fields: [captainUserId], references: [id], onDelete: Restrict)
 
   rosterSlots SeasonRosterSlot[]
   points      PointsEvent[]
@@ -260,10 +273,48 @@ model SeedPairing {
   playerA User        @relation("PairingPlayerA", fields: [playerAId], references: [id], onDelete: Restrict)
   playerB User        @relation("PairingPlayerB", fields: [playerBId], references: [id], onDelete: Restrict)
 
+  subRequests SubstitutionRequest[]
+
   @@unique([matchupId, seedIndex])
   @@index([matchupId])
   @@index([playerAId])
   @@index([playerBId])
+}
+
+model SubstitutionRequest {
+  id        String @id @default(uuid())
+  pairingId String
+  seasonId  String
+
+  replacesSide   String
+  replacesUserId String
+
+  subUserId String
+
+  replacedMmrAtRequest Int
+  subMmrAtRequest      Int
+
+  status SubRequestStatus @default(PENDING)
+
+  requestedByUserId String
+  requestedAt       DateTime @default(now())
+
+  decidedByUserId String?
+  decidedAt       DateTime?
+
+  note String?
+
+  pairing SeedPairing @relation(fields: [pairingId], references: [id], onDelete: Cascade)
+  season  Season      @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+
+  requestedBy  User  @relation("SubReqRequestedBy", fields: [requestedByUserId], references: [id], onDelete: Restrict)
+  decidedBy    User? @relation("SubReqDecidedBy", fields: [decidedByUserId], references: [id], onDelete: SetNull)
+  subUser      User  @relation("SubReqSubUser", fields: [subUserId], references: [id], onDelete: Restrict)
+  replacesUser User  @relation("SubReqReplacesUser", fields: [replacesUserId], references: [id], onDelete: Restrict)
+
+  @@index([seasonId])
+  @@index([pairingId])
+  @@index([status])
 }
 
 model PointsEvent {
