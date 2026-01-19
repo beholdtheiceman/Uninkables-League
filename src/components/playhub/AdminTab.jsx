@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { fetchJson } from "../../utils/api.js";
 
-export default function AdminTab({ leagueId, seasonId, onLeagueChanged, onSeasonChanged }) {
+export default function AdminTab({ leagueId, seasonId, onLeagueChanged, onSeasonChanged, onLeagueCreated }) {
   const [err, setErr] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -102,6 +102,7 @@ export default function AdminTab({ leagueId, seasonId, onLeagueChanged, onSeason
           description: leagueDescription.trim() || undefined
         })
       });
+      if (d?.league) onLeagueCreated?.(d.league);
       onLeagueChanged(d.league.id);
       setLeagueName("");
       setLeagueDescription("");
@@ -267,7 +268,9 @@ export default function AdminTab({ leagueId, seasonId, onLeagueChanged, onSeason
         <strong>Create League</strong>
         <input value={leagueName} onChange={(e) => setLeagueName(e.target.value)} placeholder="League name" />
         <input value={leagueDescription} onChange={(e) => setLeagueDescription(e.target.value)} placeholder="Description (optional)" />
-        <button disabled={loading} onClick={createLeague}>Create league</button>
+        <button disabled={loading || !leagueName.trim()} onClick={createLeague}>
+          {loading ? "Creating..." : "Create league"}
+        </button>
       </div>
 
       <div className="card" style={{ display: "grid", gap: 10 }}>

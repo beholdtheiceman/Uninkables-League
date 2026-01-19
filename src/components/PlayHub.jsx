@@ -94,7 +94,20 @@ export default function PlayHub({ open, onClose }) {
       { key: "thisweek", label: "This Week", el: <ThisWeekTab {...ctx} /> },
       { key: "teams", label: "Teams", el: <TeamsTab {...ctx} /> }
     ];
-    if (user) base.push({ key: "admin", label: "Admin", el: <AdminTab {...ctx} onLeagueChanged={setLeagueId} onSeasonChanged={setSeasonId} /> });
+    if (user) {
+      base.push({
+        key: "admin",
+        label: "Admin",
+        el: (
+          <AdminTab
+            {...ctx}
+            onLeagueChanged={setLeagueId}
+            onSeasonChanged={setSeasonId}
+            onLeagueCreated={(league) => setLeagues((prev) => [league, ...prev])}
+          />
+        )
+      });
+    }
     return base;
   }, [user, leagueId, seasonId]);
 
