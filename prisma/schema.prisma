@@ -1,0 +1,305 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum LeagueRole {
+  PLAYER
+  CAPTAIN
+  ADMIN
+}
+
+enum SeasonPhase {
+  OFFSEASON
+  REGULAR
+  PLAYOFFS
+  COMPLETE
+}
+
+enum WeekType {
+  REGULAR
+  PLAYOFF
+  OFFSEASON
+}
+
+enum MatchState {
+  DRAFT
+  OPEN
+  LOCKED
+  FINAL
+}
+
+enum PairingState {
+  PENDING_SCHEDULE
+  SCHEDULED
+  REPORTED
+  DISPUTED
+  FINAL
+}
+
+enum PointsEventType {
+  GAME_WIN
+  MATCH_WIN
+  TEAM_WEEK_BONUS
+  ADMIN_ADJUSTMENT
+}
+
+enum MMREventType {
+  MATCH_RESULT
+  ADMIN_ADJUSTMENT
+  INITIAL_RATING
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  leagueMemberships LeagueMember[]
+  leagueRatings     LeagueRating[]
+
+  captainTeams SeasonTeam[] @relation("CaptainTeams")
+
+  rosterSlots SeasonRosterSlot[]
+
+  pairingsAsA SeedPairing[] @relation("PairingPlayerA")
+  pairingsAsB SeedPairing[] @relation("PairingPlayerB")
+
+  pointsEvents PointsEvent[]
+}
+
+model League {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  seasons Season[]
+  members LeagueMember[]
+  ratings LeagueRating[]
+
+  @@index([name])
+}
+
+model LeagueMember {
+  id       String     @id @default(uuid())
+  leagueId String
+  userId   String
+  role     LeagueRole @default(PLAYER)
+  joinedAt DateTime   @default(now())
+
+  league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueId, userId])
+  @@index([leagueId])
+  @@index([userId])
+}
+
+model LeagueRating {
+  id        String   @id @default(uuid())
+  leagueId  String
+  userId    String
+  mmr       Int      @default(250)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  events MMREvent[]
+
+  @@unique([leagueId, userId])
+  @@index([leagueId])
+  @@index([userId])
+}
+
+model Season {
+  id       String      @id @default(uuid())
+  leagueId String
+  name     String
+  phase    SeasonPhase @default(OFFSEASON)
+
+  rosterSize          Int @default(5)
+  preseasonTeamMmrCap Int @default(1600)
+  mmrMin              Int @default(100)
+  mmrMax              Int @default(500)
+  regularWeeks        Int @default(16)
+  playoffWeeks        Int @default(4)
+  offseasonWeeks      Int @default(4)
+
+  timezone            String @default("America/New_York")
+  subDeadlineDow      Int    @default(2)
+  scheduleDeadlineDow Int    @default(3)
+  resultsDeadlineDow  Int    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  teams  SeasonTeam[]
+  weeks  SeasonWeek[]
+  points PointsEvent[]
+
+  @@index([leagueId])
+}
+
+model SeasonTeam {
+  id             String   @id @default(uuid())
+  seasonId       String
+  name           String
+  captainUserId  String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  season  Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  captain User   @relation("CaptainTeams", fields: [captainUserId], references: [id], onDelete: Restrict)
+
+  rosterSlots SeasonRosterSlot[]
+  points      PointsEvent[]
+
+  matchupsAsTeamA WeekMatchup[] @relation("MatchupTeamA")
+  matchupsAsTeamB WeekMatchup[] @relation("MatchupTeamB")
+
+  @@index([seasonId])
+  @@index([captainUserId])
+  @@unique([seasonId, name])
+}
+
+model SeasonRosterSlot {
+  id           String   @id @default(uuid())
+  seasonTeamId String
+  slotIndex    Int
+  userId       String
+  mmrAtLock    Int
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  seasonTeam SeasonTeam @relation(fields: [seasonTeamId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([seasonTeamId, slotIndex])
+  @@index([seasonTeamId])
+  @@index([userId])
+}
+
+model SeasonWeek {
+  id        String     @id @default(uuid())
+  seasonId  String
+  weekIndex Int
+  type      WeekType   @default(REGULAR)
+  state     MatchState @default(DRAFT)
+
+  opensAt DateTime?
+  locksAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  season   Season       @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  matchups WeekMatchup[]
+  points   PointsEvent[]
+
+  @@unique([seasonId, weekIndex])
+  @@index([seasonId])
+}
+
+model WeekMatchup {
+  id           String      @id @default(uuid())
+  seasonWeekId String
+  teamAId      String
+  teamBId      String
+  state        MatchState  @default(DRAFT)
+  createdAt    DateTime    @default(now())
+
+  seasonWeek SeasonWeek @relation(fields: [seasonWeekId], references: [id], onDelete: Cascade)
+  teamA      SeasonTeam @relation("MatchupTeamA", fields: [teamAId], references: [id], onDelete: Restrict)
+  teamB      SeasonTeam @relation("MatchupTeamB", fields: [teamBId], references: [id], onDelete: Restrict)
+
+  pairings SeedPairing[]
+
+  @@index([seasonWeekId])
+  @@index([teamAId])
+  @@index([teamBId])
+}
+
+model SeedPairing {
+  id        String       @id @default(uuid())
+  matchupId String
+  seedIndex Int
+  state     PairingState @default(PENDING_SCHEDULE)
+
+  playerAId String
+  playerBId String
+
+  mmrAAtCreate Int
+  mmrBAtCreate Int
+
+  scheduledFor DateTime?
+  scheduleProposedByUserId String?
+  scheduleConfirmedByA Boolean @default(false)
+  scheduleConfirmedByB Boolean @default(false)
+
+  gamesWonA Int @default(0)
+  gamesWonB Int @default(0)
+  reportedByUserId String?
+  reportedAt DateTime?
+  confirmedByOpponent Boolean @default(false)
+
+  matchup  WeekMatchup @relation(fields: [matchupId], references: [id], onDelete: Cascade)
+  playerA User        @relation("PairingPlayerA", fields: [playerAId], references: [id], onDelete: Restrict)
+  playerB User        @relation("PairingPlayerB", fields: [playerBId], references: [id], onDelete: Restrict)
+
+  @@unique([matchupId, seedIndex])
+  @@index([matchupId])
+  @@index([playerAId])
+  @@index([playerBId])
+}
+
+model PointsEvent {
+  id        String          @id @default(uuid())
+  seasonId  String
+  weekId    String?
+  teamId    String?
+  userId    String?
+  type      PointsEventType
+  points    Int
+  reason    String?
+  createdAt DateTime @default(now())
+
+  season Season      @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  week   SeasonWeek? @relation(fields: [weekId], references: [id], onDelete: SetNull)
+  team   SeasonTeam? @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  user   User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([seasonId])
+  @@index([weekId])
+  @@index([teamId])
+  @@index([userId])
+  @@index([type])
+}
+
+model MMREvent {
+  id        String     @id @default(uuid())
+  leagueId  String
+  userId    String
+  type      MMREventType
+  delta     Int
+  mmrBefore Int
+  mmrAfter  Int
+  reason    String?
+  createdAt DateTime @default(now())
+
+  rating LeagueRating? @relation(fields: [leagueId, userId], references: [leagueId, userId], onDelete: Cascade)
+
+  @@index([leagueId])
+  @@index([userId])
+  @@index([createdAt])
+}
