@@ -1,6 +1,7 @@
 import { prisma } from "../../_lib/db.js";
 import { json } from "../../_lib/http.js";
 import { requireAdmin, requireAuth } from "../../_lib/playhubAuth.js";
+import { computeWeekDeadlines, isPast } from "../../_lib/deadlines.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return json(res, 405, { error: "Method not allowed" });
@@ -15,15 +16,27 @@ export default async function handler(req, res) {
     where: { id: pairingId },
     select: {
       id: true,
+      state: true,
       playerAId: true,
       playerBId: true,
-      gamesWonA: true,
-      gamesWonB: true,
       reportedByUserId: true,
-      state: true,
       matchup: {
         select: {
-          seasonWeek: { select: { state: true, season: { select: { leagueId: true } } } }
+          seasonWeek: {
+            select: {
+              opensAt: true,
+              state: true,
+              season: {
+                select: {
+                  leagueId: true,
+                  timezone: true,
+                  subDeadlineDow: true,
+                  scheduleDeadlineDow: true,
+                  resultsDeadlineDow: true
+                }
+              }
+            }
+          }
         }
       }
     }
@@ -31,15 +44,30 @@ export default async function handler(req, res) {
 
   if (!pairing) return json(res, 404, { error: "Pairing not found" });
 
-  const leagueId = pairing.matchup.seasonWeek.season.leagueId;
+  const season = pairing.matchup.seasonWeek.season;
+  const leagueId = season.leagueId;
   const weekState = pairing.matchup.seasonWeek.state;
 
   const isPlayer = auth.user.id === pairing.playerAId || auth.user.id === pairing.playerBId;
   const admin = await requireAdmin(req, leagueId);
   if (!isPlayer && !admin.ok) return json(res, 403, { error: "Forbidden" });
 
+  if (pairing.state === "FINAL") return json(res, 409, { error: "Pairing already FINAL" });
+
   if (weekState !== "OPEN" && !admin.ok) {
     return json(res, 409, { error: "Week is not open" });
+  }
+
+  const deadlines = computeWeekDeadlines({
+    weekOpensAt: pairing.matchup.seasonWeek.opensAt ?? new Date(),
+    timezone: season.timezone,
+    subDeadlineDow: season.subDeadlineDow,
+    scheduleDeadlineDow: season.scheduleDeadlineDow,
+    resultsDeadlineDow: season.resultsDeadlineDow
+  });
+
+  if (isPast(deadlines.resultsDeadlineUtc) && !admin.ok) {
+    return json(res, 409, { error: `Results deadline passed (${deadlines.resultsDeadlineIso})` });
   }
 
   if (!pairing.reportedByUserId) return json(res, 400, { error: "No result reported yet" });
@@ -60,5 +88,5 @@ export default async function handler(req, res) {
     }
   });
 
-  return json(res, 200, { pairing: next });
+  return json(res, 200, { pairing: next, deadlines });
 }
