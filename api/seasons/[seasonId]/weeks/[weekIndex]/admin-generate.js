@@ -31,7 +31,7 @@ export default async function handler(req, res) {
   const admin = await requireAdmin(req, season.leagueId);
   if (!admin.ok) return json(res, admin.status, { error: admin.error });
 
-  const body = Body ? Body.parse(await readJson(req)) : { open: true };
+  const parsed = Body.parse((await readJson(req)) ?? undefined);\n  const body = parsed ?? { open: true };
 
   // Load approved rosters (require lock snapshot)
   const teams = await prisma.seasonTeam.findMany({

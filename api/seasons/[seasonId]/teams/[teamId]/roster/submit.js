@@ -3,15 +3,16 @@ import { prisma } from "../../../../_lib/db.js";
 import { json, readJson } from "../../../../_lib/http.js";
 import { requireAdmin, requireAuth } from "../../../../_lib/playhubAuth.js";
 
+const Slot = z
+  .object({
+    slotIndex: z.number().int().min(1).max(5),
+    userId: z.string().uuid().optional(),
+    email: z.string().email().optional()
+  })
+  .refine((v) => v.userId || v.email, { message: "Provide userId or email" });
+
 const Body = z.object({
-  slots: z
-    .array(
-      z.object({
-        slotIndex: z.number().int().min(1).max(5),
-        userId: z.string().uuid()
-      })
-    )
-    .length(5)
+  slots: z.array(Slot).length(5)
 });
 
 async function ensureRatings(leagueId, userIds) {
@@ -52,7 +53,12 @@ export default async function handler(req, res) {
 
   const team = await prisma.seasonTeam.findUnique({
     where: { id: teamId },
-    select: { id: true, seasonId: true, captainUserId: true, season: { select: { id: true, leagueId: true, preseasonTeamMmrCap: true } } }
+    select: {
+      id: true,
+      seasonId: true,
+      captainUserId: true,
+      season: { select: { id: true, leagueId: true, preseasonTeamMmrCap: true } }
+    }
   });
   if (!team || team.seasonId !== seasonId) return json(res, 404, { error: "Team not found" });
 
@@ -63,9 +69,22 @@ export default async function handler(req, res) {
 
   const body = Body.parse(await readJson(req));
 
+  // Resolve emails to userIds
+  const resolved = [];
+  for (const s of body.slots) {
+    if (s.userId) {
+      resolved.push({ slotIndex: s.slotIndex, userId: s.userId });
+      continue;
+    }
+
+    const user = await prisma.user.findUnique({ where: { email: s.email }, select: { id: true } });
+    if (!user) return json(res, 404, { error: `User not found: ${s.email}` });
+    resolved.push({ slotIndex: s.slotIndex, userId: user.id });
+  }
+
   // Validate uniqueness
-  const slotIdxSet = new Set(body.slots.map((s) => s.slotIndex));
-  const userSet = new Set(body.slots.map((s) => s.userId));
+  const slotIdxSet = new Set(resolved.map((s) => s.slotIndex));
+  const userSet = new Set(resolved.map((s) => s.userId));
   if (slotIdxSet.size !== 5) return json(res, 400, { error: "slotIndex must be unique 1..5" });
   if (userSet.size !== 5) return json(res, 400, { error: "Roster must contain 5 unique users" });
 
@@ -75,13 +94,16 @@ export default async function handler(req, res) {
   const total = userIds.reduce((sum, id) => sum + (mmrMap.get(id) ?? 250), 0);
 
   if (total > team.season.preseasonTeamMmrCap) {
-    return json(res, 400, { error: `Preseason cap exceeded: ${total} > ${team.season.preseasonTeamMmrCap}`, totalMmr: total });
+    return json(res, 400, {
+      error: `Preseason cap exceeded: ${total} > ${team.season.preseasonTeamMmrCap}`,
+      totalMmr: total
+    });
   }
 
   // Replace roster slots
   await prisma.seasonRosterSlot.deleteMany({ where: { seasonTeamId: teamId } });
   await prisma.seasonRosterSlot.createMany({
-    data: body.slots.map((s) => ({
+    data: resolved.map((s) => ({
       seasonTeamId: teamId,
       slotIndex: s.slotIndex,
       userId: s.userId,
