@@ -141,15 +141,11 @@ export default function AdminTab({
   );
 
   async function createSeason() {
-    if (!effectiveLeagueId) {
-      setErr("No league found in the database.");
-      return;
-    }
     if (!seasonName.trim()) return;
     setLoading(true);
     setErr(null);
     try {
-      const d = await fetchJson(`/api/leagues/${effectiveLeagueId}/seasons`, {
+      const d = await fetchJson(`/api/seasons`, {
         method: "POST",
         body: JSON.stringify({ name: seasonName.trim() })
       });
@@ -365,7 +361,7 @@ export default function AdminTab({
           This league hosts multiple seasons. Create a new season here.
         </div>
         <input value={seasonName} onChange={(e) => setSeasonName(e.target.value)} placeholder="Season name (e.g., 2026 S1)" />
-        <button disabled={loading || !effectiveLeagueId} onClick={createSeason}>Create season</button>
+        <button disabled={loading} onClick={createSeason}>Create season</button>
       </div>
 
       <div className="card" style={{ display: "grid", gap: 10 }}>
