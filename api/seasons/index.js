@@ -10,17 +10,35 @@ const Body = z.object({
 
 export default async function handler(req, res) {
   if (req.method === "OPTIONS") {
-    res.setHeader("Allow", "POST, OPTIONS");
+    res.setHeader("Allow", "GET, POST, OPTIONS");
     return json(res, 204, {});
   }
-  if (req.method !== "POST") return json(res, 405, { error: "Method not allowed" });
 
-  // Single-league app: seasons belong to the one league.
+  // Single-league app: pick the primary league (most recently created).
   const league = await prisma.league.findFirst({
-    orderBy: { createdAt: "asc" },
+    orderBy: { createdAt: "desc" },
     select: { id: true }
   });
   if (!league) return json(res, 400, { error: "No league found in the database" });
+
+  if (req.method === "GET") {
+    const seasons = await prisma.season.findMany({
+      where: { leagueId: league.id },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, leagueId: true, name: true, phase: true, createdAt: true, updatedAt: true }
+    });
+
+    const currentSeason =
+      seasons.find((s) => s.phase === "REGULAR" || s.phase === "PLAYOFFS") || seasons[0] || null;
+
+    return json(res, 200, {
+      leagueId: league.id,
+      currentSeasonId: currentSeason?.id ?? null,
+      seasons
+    });
+  }
+
+  if (req.method !== "POST") return json(res, 405, { error: "Method not allowed" });
 
   const admin = await requireAdmin(req, league.id);
   if (!admin.ok) return json(res, admin.status, { error: admin.error });
