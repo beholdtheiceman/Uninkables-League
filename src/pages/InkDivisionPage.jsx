@@ -2,14 +2,7 @@ import React, { useMemo } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import PlayHub from "../components/PlayHub.jsx";
 
-const inks = new Map([
-  ["amber", "Amber"],
-  ["amethyst", "Amethyst"],
-  ["emerald", "Emerald"],
-  ["ruby", "Ruby"],
-  ["sapphire", "Sapphire"],
-  ["steel", "Steel"]
-]);
+const seasons = new Map([["alpha", "Season Alpha"]]);
 
 const sections = [
   { key: "weeks", label: "Weeks" },
@@ -24,7 +17,7 @@ const sections = [
 export default function InkDivisionPage() {
   const { ink, section } = useParams();
 
-  const inkName = inks.get((ink || "").toLowerCase());
+  const inkName = seasons.get((ink || "").toLowerCase());
   const sec = (section || "weeks").toLowerCase();
   const isValidSection = sections.some((s) => s.key === sec);
 
@@ -48,7 +41,7 @@ export default function InkDivisionPage() {
       <div className="card">
         <div style={{ fontSize: 20, fontWeight: 800 }}>{title}</div>
         <div style={{ opacity: 0.75, marginTop: 6 }}>
-          Division pages are Lorcana-themed. (Inks: Amber/Amethyst/Emerald/Ruby/Sapphire/Steel.)
+          Season Alpha pages for the Lorcana Team League.
         </div>
       </div>
 

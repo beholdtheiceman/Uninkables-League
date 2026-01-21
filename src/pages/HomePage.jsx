@@ -8,9 +8,11 @@ export default function HomePage() {
   return (
     <div style={{ display: "grid", gap: 16 }}>
       <section className="card">
-        <div style={{ fontSize: 20, fontWeight: 800 }}>Uninkables League Hub</div>
+        <div style={{ fontSize: 20, fontWeight: 800 }}>
+          Lorcana Team League - Hosted By the UNINKABLES Community and Unplugged Games
+        </div>
         <div style={{ opacity: 0.75, marginTop: 6 }}>
-          Routed site scaffolding — navigation is Lorcana-themed (ink divisions).
+          League hub for scheduling, teams, standings, and season operations.
         </div>
       </section>
 

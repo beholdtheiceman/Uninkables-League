@@ -246,90 +246,19 @@ export default function SiteNav({ user, loading, onOpenPlayHub }) {
         items: [
           {
             kind: "route",
-            label: "Amber",
-            to: "/current-season/amber/weeks",
+            label: "Season Alpha",
+            to: "/current-season/alpha/weeks",
             items: [
-              { kind: "route", label: "Weeks", to: "/current-season/amber/weeks" },
-              { kind: "route", label: "Forms", to: "/current-season/amber/forms" },
-              { kind: "route", label: "Schedule", to: "/current-season/amber/schedule" },
-              { kind: "route", label: "Teams", to: "/current-season/amber/teams" },
-              { kind: "route", label: "Standings", to: "/current-season/amber/standings" },
-              { kind: "route", label: "Stats", to: "/current-season/amber/stats" },
-              { kind: "route", label: "Scouting", to: "/current-season/amber/scouting" }
+              { kind: "route", label: "Weeks", to: "/current-season/alpha/weeks" },
+              { kind: "route", label: "Forms", to: "/current-season/alpha/forms" },
+              { kind: "route", label: "Schedule", to: "/current-season/alpha/schedule" },
+              { kind: "route", label: "Teams", to: "/current-season/alpha/teams" },
+              { kind: "route", label: "Standings", to: "/current-season/alpha/standings" },
+              { kind: "route", label: "Stats", to: "/current-season/alpha/stats" },
+              { kind: "route", label: "Scouting", to: "/current-season/alpha/scouting" }
             ],
-          },
-          {
-            kind: "route",
-            label: "Amethyst",
-            to: "/current-season/amethyst/weeks",
-            items: [
-              { kind: "route", label: "Weeks", to: "/current-season/amethyst/weeks" },
-              { kind: "route", label: "Forms", to: "/current-season/amethyst/forms" },
-              { kind: "route", label: "Schedule", to: "/current-season/amethyst/schedule" },
-              { kind: "route", label: "Teams", to: "/current-season/amethyst/teams" },
-              { kind: "route", label: "Standings", to: "/current-season/amethyst/standings" },
-              { kind: "route", label: "Stats", to: "/current-season/amethyst/stats" },
-              { kind: "route", label: "Scouting", to: "/current-season/amethyst/scouting" }
-            ],
-          },
-          {
-            kind: "route",
-            label: "Emerald",
-            to: "/current-season/emerald/weeks",
-            items: [
-              { kind: "route", label: "Weeks", to: "/current-season/emerald/weeks" },
-              { kind: "route", label: "Forms", to: "/current-season/emerald/forms" },
-              { kind: "route", label: "Schedule", to: "/current-season/emerald/schedule" },
-              { kind: "route", label: "Teams", to: "/current-season/emerald/teams" },
-              { kind: "route", label: "Standings", to: "/current-season/emerald/standings" },
-              { kind: "route", label: "Stats", to: "/current-season/emerald/stats" },
-              { kind: "route", label: "Scouting", to: "/current-season/emerald/scouting" }
-            ],
-          },
-          {
-            kind: "route",
-            label: "Ruby",
-            to: "/current-season/ruby/weeks",
-            items: [
-              { kind: "route", label: "Weeks", to: "/current-season/ruby/weeks" },
-              { kind: "route", label: "Forms", to: "/current-season/ruby/forms" },
-              { kind: "route", label: "Schedule", to: "/current-season/ruby/schedule" },
-              { kind: "route", label: "Teams", to: "/current-season/ruby/teams" },
-              { kind: "route", label: "Standings", to: "/current-season/ruby/standings" },
-              { kind: "route", label: "Stats", to: "/current-season/ruby/stats" },
-              { kind: "route", label: "Scouting", to: "/current-season/ruby/scouting" }
-            ],
-          },
-          {
-            kind: "route",
-            label: "Sapphire",
-            to: "/current-season/sapphire/weeks",
-            items: [
-              { kind: "route", label: "Weeks", to: "/current-season/sapphire/weeks" },
-              { kind: "route", label: "Forms", to: "/current-season/sapphire/forms" },
-              { kind: "route", label: "Schedule", to: "/current-season/sapphire/schedule" },
-              { kind: "route", label: "Teams", to: "/current-season/sapphire/teams" },
-              { kind: "route", label: "Standings", to: "/current-season/sapphire/standings" },
-              { kind: "route", label: "Stats", to: "/current-season/sapphire/stats" },
-              { kind: "route", label: "Scouting", to: "/current-season/sapphire/scouting" }
-            ]
-          },
-          {
-            kind: "route",
-            label: "Steel",
-            to: "/current-season/steel/weeks",
-            items: [
-              { kind: "route", label: "Weeks", to: "/current-season/steel/weeks" },
-              { kind: "route", label: "Forms", to: "/current-season/steel/forms" },
-              { kind: "route", label: "Schedule", to: "/current-season/steel/schedule" },
-              { kind: "route", label: "Teams", to: "/current-season/steel/teams" },
-              { kind: "route", label: "Standings", to: "/current-season/steel/standings" },
-              { kind: "route", label: "Stats", to: "/current-season/steel/stats" },
-              { kind: "route", label: "Scouting", to: "/current-season/steel/scouting" }
-            ]
           },
           { kind: "route", label: "Player Directory", to: "/current-season/player-directory" },
-          { kind: "route", label: "Multi-Division Stats", to: "/current-season/multi-division-stats" }
         ],
       },
       {
@@ -341,28 +270,9 @@ export default function SiteNav({ user, loading, onOpenPlayHub }) {
           { kind: "route", label: "Captain Guide & Overview", to: "/resources/captain-guide" },
           { kind: "route", label: "Best Practices", to: "/resources/best-practices" },
           { kind: "route", label: "PR Calculator", to: "/resources/pr-calculator" },
-          { kind: "route", label: "Ban Process", to: "/resources/ban-process" },
-          { kind: "route", label: "Time Zone Converter", to: "/resources/time-zone" },
           { kind: "route", label: "Discord Timestamp Generator", to: "/resources/discord-timestamp" }
         ],
       },
-      {
-        kind: "route",
-        label: "Archives",
-        to: "/archives",
-        items: [
-          { kind: "route", label: "Amber Archives", to: "/archives/amber" },
-          { kind: "route", label: "Amethyst Archives", to: "/archives/amethyst" },
-          { kind: "route", label: "Emerald Archives", to: "/archives/emerald" },
-          { kind: "route", label: "Ruby Archives", to: "/archives/ruby" },
-          { kind: "route", label: "Sapphire Archives", to: "/archives/sapphire" },
-          { kind: "route", label: "Steel Archives", to: "/archives/steel" },
-          { kind: "route", label: "Lifetime Stat Dashboard", to: "/archives/lifetime-stats" },
-          { kind: "route", label: "Hall of Fame", to: "/archives/hall-of-fame" }
-        ],
-      },
-      { kind: "route", label: "Blog", to: "/blog" },
-      { kind: "route", label: "Shop", to: "/shop" },
       { kind: "route", label: "Contact Us", to: "/contact" }
     ];
   }, []);
@@ -399,7 +309,7 @@ export default function SiteNav({ user, loading, onOpenPlayHub }) {
     <div ref={rootRef} className="siteNav">
       <div className="siteNavInner">
         <Link className="brand" to="/" onClick={() => setOpenPath([])}>
-          Uninkables League Hub
+          Lorcana Team League
         </Link>
 
         <div className="navDesktop">

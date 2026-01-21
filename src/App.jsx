@@ -10,9 +10,6 @@ import SectionPage from "./pages/SectionPage.jsx";
 import CurrentSeasonLandingPage from "./pages/CurrentSeasonLandingPage.jsx";
 import InkDivisionPage from "./pages/InkDivisionPage.jsx";
 import PlayerDirectoryPage from "./pages/PlayerDirectoryPage.jsx";
-import MultiDivisionStatsPage from "./pages/MultiDivisionStatsPage.jsx";
-import ArchivesLandingPage from "./pages/ArchivesLandingPage.jsx";
-import ArchivesInkPage from "./pages/ArchivesInkPage.jsx";
 
 function AppLayout() {
   const { user, loading } = useAuth();
@@ -56,15 +53,8 @@ export default function App() {
             <Route path="current-season/:ink/:section" element={<InkDivisionPage />} />
             <Route path="current-season/:ink" element={<Navigate to="/current-season" replace />} />
             <Route path="current-season/player-directory" element={<PlayerDirectoryPage />} />
-            <Route path="current-season/multi-division-stats" element={<MultiDivisionStatsPage />} />
 
             <Route path="resources/*" element={<SectionPage baseTitle="Resources" />} />
-            <Route path="archives" element={<ArchivesLandingPage />} />
-            <Route path="archives/:ink" element={<ArchivesInkPage />} />
-            <Route path="archives/lifetime-stats" element={<SimplePage title="Lifetime Stat Dashboard" />} />
-            <Route path="archives/hall-of-fame" element={<SimplePage title="Hall of Fame" />} />
-            <Route path="blog" element={<SimplePage title="Blog" />} />
-            <Route path="shop" element={<SimplePage title="Shop" />} />
             <Route path="contact" element={<SimplePage title="Contact Us" />} />
 
             <Route
