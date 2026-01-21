@@ -27,7 +27,13 @@ function useStickyState(key, initial) {
   return [value, setValue];
 }
 
-export default function PlayHub({ tab, onTabChange, hideTabs = false }) {
+export default function PlayHub({
+  tab,
+  onTabChange,
+  hideTabs = false,
+  fixedSeasonId = null,
+  hideSeasonSelector = false
+}) {
   const { user } = useAuth();
 
   const [leagueId, setLeagueId] = useStickyState("playhub.leagueId", "");
@@ -89,12 +95,16 @@ export default function PlayHub({ tab, onTabChange, hideTabs = false }) {
       setSeasonId("");
       return;
     }
+    if (fixedSeasonId && seasons.some((s) => s.id === fixedSeasonId)) {
+      setSeasonId(fixedSeasonId);
+      return;
+    }
     if (seasonId && seasons.some((s) => s.id === seasonId)) return;
     setSeasonId(leagueDetail.currentSeasonId || seasons[0].id);
   }, [leagueDetail]);
 
   const tabs = useMemo(() => {
-    const ctx = { leagueId, seasonId };
+    const ctx = { leagueId, seasonId: fixedSeasonId || seasonId };
     const base = [
       { key: "standings", label: "Standings", el: <StandingsTab {...ctx} /> },
       { key: "thisweek", label: "This Week", el: <ThisWeekTab {...ctx} /> },
@@ -115,7 +125,7 @@ export default function PlayHub({ tab, onTabChange, hideTabs = false }) {
       });
     }
     return base;
-  }, [user, leagueId, seasonId]);
+  }, [user, leagueId, seasonId, fixedSeasonId]);
 
   const [active, setActive] = useState(tab || "standings");
   useEffect(() => {
@@ -126,6 +136,9 @@ export default function PlayHub({ tab, onTabChange, hideTabs = false }) {
   const seasons = leagueDetail?.seasons || [];
   const singleLeague = leagues.length === 1;
   const selectedLeagueName = singleLeague ? leagues[0]?.name : null;
+  const effectiveSeasonId = fixedSeasonId || seasonId;
+  const selectedSeasonName =
+    seasons.find((s) => s.id === effectiveSeasonId)?.name || null;
 
   return (
     <div className="card" style={{ display: "grid", gap: 10 }}>
@@ -172,26 +185,41 @@ export default function PlayHub({ tab, onTabChange, hideTabs = false }) {
 
         <div style={{ minWidth: 260, flex: 1 }}>
           <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 6 }}>Season</div>
-          <select
-            value={seasonId}
-            disabled={!leagueId || !seasons.length}
-            onChange={(e) => setSeasonId(e.target.value)}
-            style={{
-              width: "100%",
-              padding: 10,
-              borderRadius: 10,
-              background: "rgba(255,255,255,0.06)",
-              color: "#e6e9f2",
-              border: "1px solid rgba(255,255,255,0.14)"
-            }}
-          >
-            <option value="">Select a season…</option>
-            {seasons.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name} ({s.phase})
-              </option>
-            ))}
-          </select>
+          {hideSeasonSelector || Boolean(fixedSeasonId) ? (
+            <div
+              className="card"
+              style={{
+                padding: "10px 12px",
+                borderRadius: 10,
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.14)"
+              }}
+              title={selectedSeasonName || undefined}
+            >
+              {selectedSeasonName || "Current Season"}
+            </div>
+          ) : (
+            <select
+              value={seasonId}
+              disabled={!leagueId || !seasons.length}
+              onChange={(e) => setSeasonId(e.target.value)}
+              style={{
+                width: "100%",
+                padding: 10,
+                borderRadius: 10,
+                background: "rgba(255,255,255,0.06)",
+                color: "#e6e9f2",
+                border: "1px solid rgba(255,255,255,0.14)"
+              }}
+            >
+              <option value="">Select a season…</option>
+              {seasons.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} ({s.phase})
+                </option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 

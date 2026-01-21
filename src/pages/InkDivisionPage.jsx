@@ -1,6 +1,7 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import PlayHub from "../components/PlayHub.jsx";
+import { fetchJson } from "../utils/api.js";
 
 const seasons = new Map([["alpha", "Season Alpha"]]);
 
@@ -35,6 +36,36 @@ export default function InkDivisionPage() {
 
   const playHubTab =
     sec === "teams" ? "teams" : sec === "standings" ? "standings" : "thisweek";
+
+  const [currentSeasonId, setCurrentSeasonId] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState(null);
+
+  useEffect(() => {
+    let alive = true;
+    async function load() {
+      setLoading(true);
+      setErr(null);
+      try {
+        const leagues = await fetchJson("/api/leagues");
+        const only = (leagues.leagues || [])[0];
+        if (!only?.id) {
+          if (alive) setCurrentSeasonId(null);
+          return;
+        }
+        const detail = await fetchJson(`/api/leagues/${only.id}`);
+        if (alive) setCurrentSeasonId(detail?.league?.currentSeasonId || null);
+      } catch (e) {
+        if (alive) setErr(e.message);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    }
+    load();
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -124,9 +155,22 @@ export default function InkDivisionPage() {
       {showPlayHub ? (
         <div style={{ display: "grid", gap: 12 }}>
           <div className="card" style={{ opacity: 0.85 }}>
-            Select League + Season below. These pages reuse your real league data views.
+            This page is bound to the league’s current season (managed in-app).
           </div>
-          <PlayHub tab={playHubTab} hideTabs />
+          {loading ? <div className="card">Loading season…</div> : null}
+          {err ? <div className="card" style={{ color: "#ff9aa2" }}>{err}</div> : null}
+          {!loading && !currentSeasonId ? (
+            <div className="card" style={{ opacity: 0.85 }}>
+              No current season found yet. Admins: create a season and set it to REGULAR in PlayHub Admin.
+            </div>
+          ) : (
+            <PlayHub
+              tab={playHubTab}
+              hideTabs
+              fixedSeasonId={currentSeasonId}
+              hideSeasonSelector
+            />
+          )}
         </div>
       ) : null}
     </div>
