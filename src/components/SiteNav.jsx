@@ -1,27 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-
-function isModifiedClick(e) {
-  return e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0;
-}
-
-function normalizeHashHref(href) {
-  if (!href) return null;
-  if (href.startsWith("#")) return href;
-  return null;
-}
-
-function scrollToHash(href) {
-  const hash = normalizeHashHref(href);
-  if (!hash) return false;
-  const id = hash.slice(1);
-  const el = document.getElementById(id);
-  if (!el) return false;
-  if (window.location.hash !== hash) {
-    window.history.replaceState(null, "", hash);
-  }
-  el.scrollIntoView({ behavior: "smooth", block: "start" });
-  return true;
-}
+import { Link } from "react-router-dom";
 
 function MenuLink({ item, onSelect, className }) {
   if (item.kind === "action") {
@@ -38,6 +16,16 @@ function MenuLink({ item, onSelect, className }) {
   }
 
   const isExternal = item.kind === "external";
+  const isRoute = item.kind === "route";
+
+  if (isRoute) {
+    return (
+      <Link className={className} role="menuitem" to={item.to} onClick={() => onSelect(item)}>
+        {item.label}
+      </Link>
+    );
+  }
+
   return (
     <a
       className={className}
@@ -46,11 +34,6 @@ function MenuLink({ item, onSelect, className }) {
       target={isExternal ? "_blank" : undefined}
       rel={isExternal ? "noreferrer" : undefined}
       onClick={(e) => {
-        if (isModifiedClick(e)) return;
-        if (!isExternal && normalizeHashHref(item.href)) {
-          const didScroll = scrollToHash(item.href);
-          if (didScroll) e.preventDefault();
-        }
         onSelect(item);
       }}
     >
@@ -252,105 +235,105 @@ export default function SiteNav({ user, loading, onOpenPlayHub }) {
 
   const menu = useMemo(() => {
     return [
-      { kind: "link", label: "Home", href: "#home" },
-      { kind: "link", label: "Culture", href: "#culture" },
-      { kind: "link", label: "New Player’s Guide", href: "#new-players-guide" },
-      { kind: "link", label: "Register", href: "#register" },
+      { kind: "route", label: "Home", to: "/" },
+      { kind: "route", label: "Culture", to: "/culture" },
+      { kind: "route", label: "New Player’s Guide", to: "/new-players-guide" },
+      { kind: "route", label: "Register", to: "/register" },
       {
-        kind: "link",
+        kind: "route",
         label: "Current Season",
-        href: "#current-season",
+        to: "/current-season",
         items: [
           {
-            kind: "link",
+            kind: "route",
             label: "Legacy Series",
-            href: "#legacy-series",
+            to: "/current-season/legacy",
             items: [
-              { kind: "link", label: "Weeks", href: "#legacy-weeks" },
-              { kind: "link", label: "Forms", href: "#legacy-forms" },
-              { kind: "link", label: "Teams", href: "#legacy-teams" },
-              { kind: "link", label: "Schedule", href: "#legacy-schedule" },
-              { kind: "link", label: "Standings", href: "#legacy-standings" },
-              { kind: "link", label: "Stats", href: "#legacy-stats" },
-              { kind: "link", label: "Scouting", href: "#legacy-scouting" },
+              { kind: "route", label: "Weeks", to: "/current-season/legacy/weeks" },
+              { kind: "route", label: "Forms", to: "/current-season/legacy/forms" },
+              { kind: "route", label: "Teams", to: "/playhub/teams" },
+              { kind: "route", label: "Schedule", to: "/playhub/thisweek" },
+              { kind: "route", label: "Standings", to: "/playhub/standings" },
+              { kind: "route", label: "Stats", to: "/current-season/legacy/stats" },
+              { kind: "route", label: "Scouting", to: "/current-season/legacy/scouting" }
             ],
           },
           {
-            kind: "link",
+            kind: "route",
             label: "Hero Series",
-            href: "#hero-series",
+            to: "/current-season/hero",
             items: [
-              { kind: "link", label: "Weeks", href: "#hero-weeks" },
-              { kind: "link", label: "Forms", href: "#hero-forms" },
-              { kind: "link", label: "Teams", href: "#hero-teams" },
-              { kind: "link", label: "Schedule", href: "#hero-schedule" },
-              { kind: "link", label: "Standings", href: "#hero-standings" },
-              { kind: "link", label: "Stats", href: "#hero-stats" },
-              { kind: "link", label: "Scouting", href: "#hero-scouting" },
+              { kind: "route", label: "Weeks", to: "/current-season/hero/weeks" },
+              { kind: "route", label: "Forms", to: "/current-season/hero/forms" },
+              { kind: "route", label: "Teams", to: "/playhub/teams" },
+              { kind: "route", label: "Schedule", to: "/playhub/thisweek" },
+              { kind: "route", label: "Standings", to: "/playhub/standings" },
+              { kind: "route", label: "Stats", to: "/current-season/hero/stats" },
+              { kind: "route", label: "Scouting", to: "/current-season/hero/scouting" }
             ],
           },
           {
-            kind: "link",
+            kind: "route",
             label: "Pro Series",
-            href: "#pro-series",
+            to: "/current-season/pro",
             items: [
-              { kind: "link", label: "Weeks", href: "#pro-weeks" },
-              { kind: "link", label: "Forms", href: "#pro-forms" },
-              { kind: "link", label: "Teams", href: "#pro-teams" },
-              { kind: "link", label: "Schedule", href: "#pro-schedule" },
-              { kind: "link", label: "Standings", href: "#pro-standings" },
-              { kind: "link", label: "Stats", href: "#pro-stats" },
-              { kind: "link", label: "Scouting", href: "#pro-scouting" },
+              { kind: "route", label: "Weeks", to: "/current-season/pro/weeks" },
+              { kind: "route", label: "Forms", to: "/current-season/pro/forms" },
+              { kind: "route", label: "Teams", to: "/playhub/teams" },
+              { kind: "route", label: "Schedule", to: "/playhub/thisweek" },
+              { kind: "route", label: "Standings", to: "/playhub/standings" },
+              { kind: "route", label: "Stats", to: "/current-season/pro/stats" },
+              { kind: "route", label: "Scouting", to: "/current-season/pro/scouting" }
             ],
           },
           {
-            kind: "link",
+            kind: "route",
             label: "Wild Series",
-            href: "#wild-series",
+            to: "/current-season/wild",
             items: [
-              { kind: "link", label: "Weeks", href: "#wild-weeks" },
-              { kind: "link", label: "Forms", href: "#wild-forms" },
-              { kind: "link", label: "Teams", href: "#wild-teams" },
-              { kind: "link", label: "Schedule", href: "#wild-schedule" },
-              { kind: "link", label: "Standings", href: "#wild-standings" },
-              { kind: "link", label: "Stats", href: "#wild-stats" },
-              { kind: "link", label: "Scouting", href: "#wild-scouting" },
+              { kind: "route", label: "Weeks", to: "/current-season/wild/weeks" },
+              { kind: "route", label: "Forms", to: "/current-season/wild/forms" },
+              { kind: "route", label: "Teams", to: "/playhub/teams" },
+              { kind: "route", label: "Schedule", to: "/playhub/thisweek" },
+              { kind: "route", label: "Standings", to: "/playhub/standings" },
+              { kind: "route", label: "Stats", to: "/current-season/wild/stats" },
+              { kind: "route", label: "Scouting", to: "/current-season/wild/scouting" }
             ],
           },
-          { kind: "link", label: "Player Database", href: "#player-database" },
-          { kind: "link", label: "Crossover Stats", href: "#crossover-stats" },
+          { kind: "route", label: "Player Database", to: "/current-season/player-database" },
+          { kind: "route", label: "Crossover Stats", to: "/current-season/crossover-stats" }
         ],
       },
       {
-        kind: "link",
+        kind: "route",
         label: "Resources",
-        href: "#resources",
+        to: "/resources",
         items: [
-          { kind: "link", label: "Rules", href: "#rules" },
-          { kind: "link", label: "Captain Guide & Overview", href: "#captain-guide" },
-          { kind: "link", label: "Best Practices", href: "#best-practices" },
-          { kind: "link", label: "PR Calculator", href: "#pr-calculator" },
-          { kind: "link", label: "Ban Process", href: "#ban-process" },
-          { kind: "link", label: "Time Zone Converter", href: "#time-zone" },
-          { kind: "link", label: "Discord Timestamp Generator", href: "#discord-timestamp" },
+          { kind: "route", label: "Rules", to: "/resources/rules" },
+          { kind: "route", label: "Captain Guide & Overview", to: "/resources/captain-guide" },
+          { kind: "route", label: "Best Practices", to: "/resources/best-practices" },
+          { kind: "route", label: "PR Calculator", to: "/resources/pr-calculator" },
+          { kind: "route", label: "Ban Process", to: "/resources/ban-process" },
+          { kind: "route", label: "Time Zone Converter", to: "/resources/time-zone" },
+          { kind: "route", label: "Discord Timestamp Generator", to: "/resources/discord-timestamp" }
         ],
       },
       {
-        kind: "link",
+        kind: "route",
         label: "THL Archives",
-        href: "#archives",
+        to: "/archives",
         items: [
-          { kind: "link", label: "Legacy Archives", href: "#legacy-archives" },
-          { kind: "link", label: "Hero Archives", href: "#hero-archives" },
-          { kind: "link", label: "Pro Archives", href: "#pro-archives" },
-          { kind: "link", label: "Wild Archives", href: "#wild-archives" },
-          { kind: "link", label: "Lifetime Stat Dashboard", href: "#lifetime-stats" },
-          { kind: "link", label: "Hall of Fame", href: "#hall-of-fame" },
+          { kind: "route", label: "Legacy Archives", to: "/archives/legacy" },
+          { kind: "route", label: "Hero Archives", to: "/archives/hero" },
+          { kind: "route", label: "Pro Archives", to: "/archives/pro" },
+          { kind: "route", label: "Wild Archives", to: "/archives/wild" },
+          { kind: "route", label: "Lifetime Stat Dashboard", to: "/archives/lifetime-stats" },
+          { kind: "route", label: "Hall of Fame", to: "/archives/hall-of-fame" }
         ],
       },
-      { kind: "link", label: "Blog", href: "#blog" },
-      { kind: "link", label: "Shop", href: "#shop" },
-      { kind: "link", label: "Contact Us", href: "#contact" },
+      { kind: "route", label: "Blog", to: "/blog" },
+      { kind: "route", label: "Shop", to: "/shop" },
+      { kind: "route", label: "Contact Us", to: "/contact" }
     ];
   }, []);
 
@@ -385,18 +368,9 @@ export default function SiteNav({ user, loading, onOpenPlayHub }) {
   return (
     <div ref={rootRef} className="siteNav">
       <div className="siteNavInner">
-        <a
-          className="brand"
-          href="#home"
-          onClick={(e) => {
-            if (isModifiedClick(e)) return;
-            const didScroll = scrollToHash("#home");
-            if (didScroll) e.preventDefault();
-            setOpenPath([]);
-          }}
-        >
+        <Link className="brand" to="/" onClick={() => setOpenPath([])}>
           Uninkables League Hub
-        </a>
+        </Link>
 
         <div className="navDesktop">
           <DesktopMenu

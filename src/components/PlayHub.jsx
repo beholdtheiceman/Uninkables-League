@@ -27,7 +27,7 @@ function useStickyState(key, initial) {
   return [value, setValue];
 }
 
-export default function PlayHub({ open, onClose }) {
+export default function PlayHub({ tab, onTabChange }) {
   const { user } = useAuth();
 
   const [leagueId, setLeagueId] = useStickyState("playhub.leagueId", "");
@@ -39,7 +39,6 @@ export default function PlayHub({ open, onClose }) {
   const [err, setErr] = useState(null);
 
   useEffect(() => {
-    if (!open) return;
     let alive = true;
     setLoading(true);
     setErr(null);
@@ -53,10 +52,9 @@ export default function PlayHub({ open, onClose }) {
     return () => {
       alive = false;
     };
-  }, [open]);
+  }, []);
 
   useEffect(() => {
-    if (!open) return;
     if (!leagueId) {
       setLeagueDetail(null);
       return;
@@ -73,7 +71,7 @@ export default function PlayHub({ open, onClose }) {
     return () => {
       alive = false;
     };
-  }, [open, leagueId]);
+  }, [leagueId]);
 
   // keep seasonId valid for selected league
   useEffect(() => {
@@ -111,77 +109,87 @@ export default function PlayHub({ open, onClose }) {
     return base;
   }, [user, leagueId, seasonId]);
 
-  const [active, setActive] = useState("standings");
-
-  if (!open) return null;
+  const [active, setActive] = useState(tab || "standings");
+  useEffect(() => {
+    if (!tab) return;
+    setActive(tab);
+  }, [tab]);
 
   const seasons = leagueDetail?.seasons || [];
 
   return (
-    <div className="modalOverlay" onMouseDown={onClose}>
-      <div className="modal" onMouseDown={(e) => e.stopPropagation()}>
-        <div className="row" style={{ justifyContent: "space-between" }}>
-          <strong>PlayHub</strong>
-          <button onClick={onClose}>Close</button>
+    <div className="card" style={{ display: "grid", gap: 10 }}>
+      <div className="row" style={{ gap: 12, flexWrap: "wrap" }}>
+        <div style={{ minWidth: 260, flex: 1 }}>
+          <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 6 }}>League</div>
+          <select
+            value={leagueId}
+            onChange={(e) => {
+              setLeagueId(e.target.value);
+              setSeasonId("");
+            }}
+            style={{
+              width: "100%",
+              padding: 10,
+              borderRadius: 10,
+              background: "rgba(255,255,255,0.06)",
+              color: "#e6e9f2",
+              border: "1px solid rgba(255,255,255,0.14)"
+            }}
+          >
+            <option value="">Select a league…</option>
+            {leagues.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.name}
+              </option>
+            ))}
+          </select>
         </div>
 
-        <div className="card" style={{ marginTop: 10, display: "grid", gap: 10 }}>
-          <div className="row" style={{ gap: 12, flexWrap: "wrap" }}>
-            <div style={{ minWidth: 260, flex: 1 }}>
-              <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 6 }}>League</div>
-              <select
-                value={leagueId}
-                onChange={(e) => {
-                  setLeagueId(e.target.value);
-                  setSeasonId("");
-                }}
-                style={{ width: "100%", padding: 10, borderRadius: 10, background: "rgba(255,255,255,0.06)", color: "#e6e9f2", border: "1px solid rgba(255,255,255,0.14)" }}
-              >
-                <option value="">Select a leagueâ€¦</option>
-                {leagues.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div style={{ minWidth: 260, flex: 1 }}>
-              <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 6 }}>Season</div>
-              <select
-                value={seasonId}
-                disabled={!leagueId || !seasons.length}
-                onChange={(e) => setSeasonId(e.target.value)}
-                style={{ width: "100%", padding: 10, borderRadius: 10, background: "rgba(255,255,255,0.06)", color: "#e6e9f2", border: "1px solid rgba(255,255,255,0.14)" }}
-              >
-                <option value="">Select a seasonâ€¦</option>
-                {seasons.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} ({s.phase})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {loading ? <div style={{ opacity: 0.8 }}>Loadingâ€¦</div> : null}
-          {err ? <div style={{ color: "#ff9aa2" }}>{err}</div> : null}
+        <div style={{ minWidth: 260, flex: 1 }}>
+          <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 6 }}>Season</div>
+          <select
+            value={seasonId}
+            disabled={!leagueId || !seasons.length}
+            onChange={(e) => setSeasonId(e.target.value)}
+            style={{
+              width: "100%",
+              padding: 10,
+              borderRadius: 10,
+              background: "rgba(255,255,255,0.06)",
+              color: "#e6e9f2",
+              border: "1px solid rgba(255,255,255,0.14)"
+            }}
+          >
+            <option value="">Select a season…</option>
+            {seasons.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} ({s.phase})
+              </option>
+            ))}
+          </select>
         </div>
-
-        <div className="tabs" style={{ marginTop: 10 }}>
-          {tabs.map((t) => (
-            <button
-              key={t.key}
-              className={active === t.key ? "tab tabActive" : "tab"}
-              onClick={() => setActive(t.key)}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        <div style={{ marginTop: 12 }}>{tabs.find((t) => t.key === active)?.el}</div>
       </div>
+
+      {loading ? <div style={{ opacity: 0.8 }}>Loading…</div> : null}
+      {err ? <div style={{ color: "#ff9aa2" }}>{err}</div> : null}
+
+      <div className="tabs" style={{ marginTop: 4 }}>
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            className={active === t.key ? "tab tabActive" : "tab"}
+            onClick={() => {
+              setActive(t.key);
+              onTabChange?.(t.key);
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ marginTop: 4 }}>{tabs.find((t) => t.key === active)?.el}</div>
     </div>
   );
 }
