@@ -4,6 +4,7 @@ import { fetchJson } from "../../utils/api.js";
 export default function AdminTab({ leagueId, seasonId, onLeagueChanged, onSeasonChanged, onLeagueCreated }) {
   const [err, setErr] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [seasonMeta, setSeasonMeta] = useState(null);
 
   const [leagueName, setLeagueName] = useState("");
   const [leagueDescription, setLeagueDescription] = useState("");
@@ -67,6 +68,26 @@ export default function AdminTab({ leagueId, seasonId, onLeagueChanged, onSeason
     loadTeams();
     loadCurrentWeek();
     loadSubRequests();
+  }, [seasonId]);
+
+  useEffect(() => {
+    let alive = true;
+    async function loadSeasonMeta() {
+      if (!seasonId) {
+        setSeasonMeta(null);
+        return;
+      }
+      try {
+        const d = await fetchJson(`/api/seasons/${seasonId}`);
+        if (alive) setSeasonMeta(d.season || null);
+      } catch {
+        if (alive) setSeasonMeta(null);
+      }
+    }
+    loadSeasonMeta();
+    return () => {
+      alive = false;
+    };
   }, [seasonId]);
 
   const unapprovedTeams = useMemo(
@@ -211,6 +232,71 @@ export default function AdminTab({ leagueId, seasonId, onLeagueChanged, onSeason
     }
   }
 
+  async function makeCurrentSeason() {
+    if (!leagueId || !seasonId) return;
+    setLoading(true);
+    setErr(null);
+    try {
+      await fetchJson(`/api/leagues/${leagueId}/set-current-season`, {
+        method: "POST",
+        body: JSON.stringify({ seasonId })
+      });
+      const d = await fetchJson(`/api/seasons/${seasonId}`);
+      setSeasonMeta(d.season || null);
+    } catch (e) {
+      setErr(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function publishSeason({ overwrite = false } = {}) {
+    if (!seasonId || !leagueId) return;
+    setLoading(true);
+    setErr(null);
+    try {
+      // Ensure this is the current season (phase = REGULAR)
+      await fetchJson(`/api/leagues/${leagueId}/set-current-season`, {
+        method: "POST",
+        body: JSON.stringify({ seasonId })
+      });
+
+      // Generate schedule
+      await fetchJson(`/api/seasons/${seasonId}/weeks/generate-schedule`, {
+        method: "POST",
+        body: JSON.stringify({ overwrite: Boolean(overwrite) })
+      });
+
+      // Open week 1
+      await fetchJson(`/api/seasons/${seasonId}/weeks/1/open`, { method: "POST" });
+      await loadCurrentWeek();
+      const d = await fetchJson(`/api/seasons/${seasonId}`);
+      setSeasonMeta(d.season || null);
+    } catch (e) {
+      setErr(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function finalizeAndOpenNextWeek() {
+    if (!seasonId) return;
+    setLoading(true);
+    setErr(null);
+    try {
+      const cur = await fetchJson(`/api/seasons/${seasonId}/weeks/current`);
+      if (!cur.week?.id || !cur.week?.weekIndex) throw new Error("No OPEN week found");
+      await fetchJson(`/api/weeks/${cur.week.id}/finalize`, { method: "POST" });
+      const next = Number(cur.week.weekIndex) + 1;
+      await fetchJson(`/api/seasons/${seasonId}/weeks/${next}/open`, { method: "POST" });
+      await loadCurrentWeek();
+    } catch (e) {
+      setErr(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function openWeek() {
     if (!seasonId) return;
     const wi = Number(openWeekIndex);
@@ -280,6 +366,37 @@ export default function AdminTab({ leagueId, seasonId, onLeagueChanged, onSeason
         </div>
         <input value={seasonName} onChange={(e) => setSeasonName(e.target.value)} placeholder="Season name (e.g., 2026 S1)" />
         <button disabled={loading || !leagueId} onClick={createSeason}>Create season</button>
+      </div>
+
+      <div className="card" style={{ display: "grid", gap: 10 }}>
+        <strong>Season Admin</strong>
+        <div style={{ fontSize: 12, opacity: 0.8 }}>
+          Publish the season inside the site (no spreadsheets): set current season, generate schedule, open/finalize weeks.
+        </div>
+        {!seasonId ? (
+          <div style={{ opacity: 0.8 }}>Select a season above.</div>
+        ) : (
+          <>
+            <div style={{ fontSize: 12, opacity: 0.85 }}>
+              Selected season: <strong>{seasonMeta?.name || seasonId}</strong>
+              {seasonMeta?.phase ? <span> • Phase: {seasonMeta.phase}</span> : null}
+            </div>
+            <div className="row" style={{ flexWrap: "wrap" }}>
+              <button disabled={loading || !leagueId} onClick={makeCurrentSeason}>
+                Make Current Season
+              </button>
+              <button disabled={loading || !seasonId} onClick={() => publishSeason({ overwrite: false })}>
+                Publish (Generate Schedule + Open Week 1)
+              </button>
+              <button disabled={loading || !seasonId} onClick={() => publishSeason({ overwrite: true })}>
+                Overwrite & Publish
+              </button>
+              <button disabled={loading || !seasonId} onClick={finalizeAndOpenNextWeek}>
+                Finalize Current Week & Open Next
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="card" style={{ display: "grid", gap: 10 }}>
