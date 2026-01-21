@@ -54,6 +54,14 @@ export default function PlayHub({ tab, onTabChange, hideTabs = false }) {
     };
   }, []);
 
+  // single-league UX: auto-select the only league
+  useEffect(() => {
+    if (leagueId) return;
+    if (leagues.length === 1) {
+      setLeagueId(leagues[0].id);
+    }
+  }, [leagueId, leagues]);
+
   useEffect(() => {
     if (!leagueId) {
       setLeagueDetail(null);
@@ -116,34 +124,50 @@ export default function PlayHub({ tab, onTabChange, hideTabs = false }) {
   }, [tab]);
 
   const seasons = leagueDetail?.seasons || [];
+  const singleLeague = leagues.length === 1;
+  const selectedLeagueName = singleLeague ? leagues[0]?.name : null;
 
   return (
     <div className="card" style={{ display: "grid", gap: 10 }}>
       <div className="row" style={{ gap: 12, flexWrap: "wrap" }}>
         <div style={{ minWidth: 260, flex: 1 }}>
           <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 6 }}>League</div>
-          <select
-            value={leagueId}
-            onChange={(e) => {
-              setLeagueId(e.target.value);
-              setSeasonId("");
-            }}
-            style={{
-              width: "100%",
-              padding: 10,
-              borderRadius: 10,
-              background: "rgba(255,255,255,0.06)",
-              color: "#e6e9f2",
-              border: "1px solid rgba(255,255,255,0.14)"
-            }}
-          >
-            <option value="">Select a league…</option>
-            {leagues.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.name}
-              </option>
-            ))}
-          </select>
+          {singleLeague ? (
+            <div
+              className="card"
+              style={{
+                padding: "10px 12px",
+                borderRadius: 10,
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.14)"
+              }}
+            >
+              {selectedLeagueName || "League"}
+            </div>
+          ) : (
+            <select
+              value={leagueId}
+              onChange={(e) => {
+                setLeagueId(e.target.value);
+                setSeasonId("");
+              }}
+              style={{
+                width: "100%",
+                padding: 10,
+                borderRadius: 10,
+                background: "rgba(255,255,255,0.06)",
+                color: "#e6e9f2",
+                border: "1px solid rgba(255,255,255,0.14)"
+              }}
+            >
+              <option value="">Select a league…</option>
+              {leagues.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.name}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
 
         <div style={{ minWidth: 260, flex: 1 }}>

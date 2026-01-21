@@ -275,7 +275,9 @@ export default function AdminTab({ leagueId, seasonId, onLeagueChanged, onSeason
 
       <div className="card" style={{ display: "grid", gap: 10 }}>
         <strong>Create Season</strong>
-        <div style={{ fontSize: 12, opacity: 0.8 }}>Select a league above first.</div>
+        <div style={{ fontSize: 12, opacity: 0.8 }}>
+          This league hosts multiple seasons. Create a new season here.
+        </div>
         <input value={seasonName} onChange={(e) => setSeasonName(e.target.value)} placeholder="Season name (e.g., 2026 S1)" />
         <button disabled={loading || !leagueId} onClick={createSeason}>Create season</button>
       </div>
