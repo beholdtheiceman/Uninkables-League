@@ -142,7 +142,6 @@ export default function PlayHub({
   }, [tab]);
 
   const seasons = leagueDetail?.seasons || [];
-  const selectedLeagueName = leagues[0]?.name || null;
   const effectiveSeasonId = fixedSeasonId || seasonId;
   const selectedSeasonName =
     seasons.find((s) => s.id === effectiveSeasonId)?.name || null;
@@ -151,27 +150,11 @@ export default function PlayHub({
     <div className="card" style={{ display: "grid", gap: 10 }}>
       {leaguesLoaded && leagues.length === 0 ? (
         <div className="card" style={{ color: "#ff9aa2" }}>
-          No league is configured in the database. This app assumes a single existing league.
+          The site isn’t initialized yet (no league record found in the database).
         </div>
       ) : null}
 
       <div className="row" style={{ gap: 12, flexWrap: "wrap" }}>
-        <div style={{ minWidth: 260, flex: 1 }}>
-          <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 6 }}>League</div>
-          <div
-            className="card"
-            style={{
-              padding: "10px 12px",
-              borderRadius: 10,
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.14)"
-            }}
-            title={selectedLeagueName || undefined}
-          >
-            {selectedLeagueName || "League"}
-          </div>
-        </div>
-
         <div style={{ minWidth: 260, flex: 1 }}>
           <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 6 }}>Season</div>
           {hideSeasonSelector || Boolean(fixedSeasonId) ? (
