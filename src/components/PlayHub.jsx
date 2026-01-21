@@ -40,6 +40,7 @@ export default function PlayHub({
   const [seasonId, setSeasonId] = useStickyState("playhub.seasonId", "");
 
   const [leagues, setLeagues] = useState([]);
+  const [leaguesLoaded, setLeaguesLoaded] = useState(false);
   const [leagueDetail, setLeagueDetail] = useState(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
@@ -54,7 +55,11 @@ export default function PlayHub({
         setLeagues(d.leagues || []);
       })
       .catch((e) => alive && setErr(e.message))
-      .finally(() => alive && setLoading(false));
+      .finally(() => {
+        if (!alive) return;
+        setLeaguesLoaded(true);
+        setLoading(false);
+      });
     return () => {
       alive = false;
     };
@@ -117,6 +122,8 @@ export default function PlayHub({
         el: (
           <AdminTab
             {...ctx}
+            leaguesLoaded={leaguesLoaded}
+            leagueCount={leagues.length}
             onLeagueChanged={setLeagueId}
             onSeasonChanged={setSeasonId}
             onLeagueCreated={(league) => setLeagues((prev) => [league, ...prev])}

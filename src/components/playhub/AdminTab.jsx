@@ -1,7 +1,15 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { fetchJson } from "../../utils/api.js";
 
-export default function AdminTab({ leagueId, seasonId, onLeagueChanged, onSeasonChanged, onLeagueCreated }) {
+export default function AdminTab({
+  leagueId,
+  seasonId,
+  onLeagueChanged,
+  onSeasonChanged,
+  onLeagueCreated,
+  leaguesLoaded = false,
+  leagueCount = 0
+}) {
   const [err, setErr] = useState(null);
   const [loading, setLoading] = useState(false);
   const [seasonMeta, setSeasonMeta] = useState(null);
@@ -340,6 +348,8 @@ export default function AdminTab({ leagueId, seasonId, onLeagueChanged, onSeason
     }
   }
 
+  const showCreateLeague = leaguesLoaded && leagueCount === 0;
+
   return (
     <div style={{ display: "grid", gap: 12 }}>
       <div className="card" style={{ display: "grid", gap: 10 }}>
@@ -350,14 +360,19 @@ export default function AdminTab({ leagueId, seasonId, onLeagueChanged, onSeason
         {err ? <div style={{ color: "#ff9aa2" }}>{err}</div> : null}
       </div>
 
-      <div className="card" style={{ display: "grid", gap: 10 }}>
-        <strong>Create League</strong>
-        <input value={leagueName} onChange={(e) => setLeagueName(e.target.value)} placeholder="League name" />
-        <input value={leagueDescription} onChange={(e) => setLeagueDescription(e.target.value)} placeholder="Description (optional)" />
-        <button disabled={loading || !leagueName.trim()} onClick={createLeague}>
-          {loading ? "Creating..." : "Create league"}
-        </button>
-      </div>
+      {showCreateLeague ? (
+        <div className="card" style={{ display: "grid", gap: 10 }}>
+          <strong>Create League</strong>
+          <div style={{ fontSize: 12, opacity: 0.8 }}>
+            One-time setup for a brand-new database (no league exists yet).
+          </div>
+          <input value={leagueName} onChange={(e) => setLeagueName(e.target.value)} placeholder="League name" />
+          <input value={leagueDescription} onChange={(e) => setLeagueDescription(e.target.value)} placeholder="Description (optional)" />
+          <button disabled={loading || !leagueName.trim()} onClick={createLeague}>
+            {loading ? "Creating..." : "Create league"}
+          </button>
+        </div>
+      ) : null}
 
       <div className="card" style={{ display: "grid", gap: 10 }}>
         <strong>Create Season</strong>
