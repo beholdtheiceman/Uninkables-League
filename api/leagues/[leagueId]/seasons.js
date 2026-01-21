@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { prisma } from "../../../_lib/db.js";
-import { json, readJson } from "../../../_lib/http.js";
-import { requireAdmin } from "../../../_lib/playhubAuth.js";
+import { prisma } from "../../_lib/db.js";
+import { json, readJson } from "../../_lib/http.js";
+import { requireAdmin } from "../../_lib/playhubAuth.js";
 
 const Body = z.object({
   name: z.string().min(1),
@@ -22,6 +22,10 @@ const Body = z.object({
 });
 
 export default async function handler(req, res) {
+  if (req.method === "OPTIONS") {
+    res.setHeader("Allow", "POST, OPTIONS");
+    return json(res, 204, {});
+  }
   if (req.method !== "POST") return json(res, 405, { error: "Method not allowed" });
 
   const leagueId = req.query?.leagueId;
