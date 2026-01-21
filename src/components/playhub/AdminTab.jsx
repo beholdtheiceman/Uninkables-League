@@ -7,7 +7,9 @@ export default function AdminTab({
   onLeagueChanged,
   onSeasonChanged,
   onLeagueCreated,
-  onDataChanged
+  onDataChanged,
+  onSeasonCreated,
+  onSeasonDeleted
 }) {
   const [err, setErr] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -151,6 +153,7 @@ export default function AdminTab({
         body: JSON.stringify({ name: seasonName.trim() })
       });
       onSeasonChanged(d.season.id);
+      onSeasonCreated?.(d.season);
       onDataChanged?.();
       setSeasonName("");
     } catch (e) {
@@ -174,6 +177,7 @@ export default function AdminTab({
       await fetchJson(`/api/seasons/${seasonId}`, { method: "DELETE" });
       setSeasonMeta(null);
       onSeasonChanged("");
+      onSeasonDeleted?.(seasonId);
       onDataChanged?.();
     } catch (e) {
       setErr(e.message);

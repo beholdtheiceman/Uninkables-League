@@ -98,6 +98,26 @@ export default function PlayHub({
 
   const refreshLeagueDetail = () => setLeagueDetailVersion((v) => v + 1);
 
+  const onSeasonCreated = (season) => {
+    if (!season?.id) return;
+    setLeagueDetail((prev) => {
+      if (!prev) return prev;
+      const existing = prev.seasons || [];
+      if (existing.some((s) => s.id === season.id)) return prev;
+      return { ...prev, seasons: [season, ...existing] };
+    });
+  };
+
+  const onSeasonDeleted = (deletedSeasonId) => {
+    if (!deletedSeasonId) return;
+    setLeagueDetail((prev) => {
+      if (!prev) return prev;
+      const existing = prev.seasons || [];
+      if (!existing.length) return prev;
+      return { ...prev, seasons: existing.filter((s) => s.id !== deletedSeasonId) };
+    });
+  };
+
   // keep seasonId valid for selected league
   useEffect(() => {
     if (!leagueDetail) return;
@@ -129,6 +149,8 @@ export default function PlayHub({
           <AdminTab
             {...ctx}
             onDataChanged={refreshLeagueDetail}
+            onSeasonCreated={onSeasonCreated}
+            onSeasonDeleted={onSeasonDeleted}
             onLeagueChanged={setLeagueId}
             onSeasonChanged={setSeasonId}
             onLeagueCreated={(league) => setLeagues((prev) => [league, ...prev])}
