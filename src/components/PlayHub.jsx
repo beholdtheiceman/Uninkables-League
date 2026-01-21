@@ -36,11 +36,8 @@ export default function PlayHub({
 }) {
   const { user } = useAuth();
 
-  const [leagueId, setLeagueId] = useStickyState("playhub.leagueId", "");
   const [seasonId, setSeasonId] = useStickyState("playhub.seasonId", "");
 
-  const [leagues, setLeagues] = useState([]);
-  const [leaguesLoaded, setLeaguesLoaded] = useState(false);
   const [leagueDetail, setLeagueDetail] = useState(null);
   const [leagueDetailVersion, setLeagueDetailVersion] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -50,15 +47,11 @@ export default function PlayHub({
     let alive = true;
     setLoading(true);
     setErr(null);
-    fetchJson("/api/leagues")
-      .then((d) => {
-        if (!alive) return;
-        setLeagues(d.leagues || []);
-      })
+    fetchJson("/api/league")
+      .then((d) => alive && setLeagueDetail(d.league))
       .catch((e) => alive && setErr(e.message))
       .finally(() => {
         if (!alive) return;
-        setLeaguesLoaded(true);
         setLoading(false);
       });
     return () => {
@@ -66,27 +59,11 @@ export default function PlayHub({
     };
   }, []);
 
-  // single-league UX: auto-select the league (treat league as a singleton, no selector UI)
   useEffect(() => {
-    if (!leaguesLoaded) return;
-    const first = leagues[0]?.id || "";
-    if (!first) {
-      if (leagueId) setLeagueId("");
-      return;
-    }
-    if (leagueId !== first) setLeagueId(first);
-  }, [leaguesLoaded, leagues, leagueId]);
-
-  useEffect(() => {
-    if (!leagueId) {
-      setLeagueDetail(null);
-      return;
-    }
-
     let alive = true;
     setLoading(true);
     setErr(null);
-    fetchJson(`/api/leagues/${leagueId}`)
+    fetchJson("/api/league")
       .then((d) => alive && setLeagueDetail(d.league))
       .catch((e) => alive && setErr(e.message))
       .finally(() => alive && setLoading(false));
@@ -94,7 +71,7 @@ export default function PlayHub({
     return () => {
       alive = false;
     };
-  }, [leagueId, leagueDetailVersion]);
+  }, [leagueDetailVersion]);
 
   const refreshLeagueDetail = () => setLeagueDetailVersion((v) => v + 1);
 
@@ -135,7 +112,7 @@ export default function PlayHub({
   }, [leagueDetail]);
 
   const tabs = useMemo(() => {
-    const ctx = { leagueId, seasonId: fixedSeasonId || seasonId };
+    const ctx = { leagueId: leagueDetail?.id || null, seasonId: fixedSeasonId || seasonId };
     const base = [
       { key: "standings", label: "Standings", el: <StandingsTab {...ctx} /> },
       { key: "thisweek", label: "This Week", el: <ThisWeekTab {...ctx} /> },
@@ -151,15 +128,13 @@ export default function PlayHub({
             onDataChanged={refreshLeagueDetail}
             onSeasonCreated={onSeasonCreated}
             onSeasonDeleted={onSeasonDeleted}
-            onLeagueChanged={setLeagueId}
             onSeasonChanged={setSeasonId}
-            onLeagueCreated={(league) => setLeagues((prev) => [league, ...prev])}
           />
         )
       });
     }
     return base;
-  }, [user, leagueId, seasonId, fixedSeasonId]);
+  }, [user, seasonId, fixedSeasonId, leagueDetail?.id]);
 
   const [active, setActive] = useState(tab || "standings");
   useEffect(() => {
@@ -174,7 +149,7 @@ export default function PlayHub({
 
   return (
     <div className="card" style={{ display: "grid", gap: 10 }}>
-      {leaguesLoaded && leagues.length === 0 ? (
+      {!leagueDetail && !loading && !err ? (
         <div className="card" style={{ color: "#ff9aa2" }}>
           The site isn’t initialized yet (no league record found in the database).
         </div>
@@ -199,7 +174,7 @@ export default function PlayHub({
           ) : (
             <select
               value={seasonId}
-              disabled={!leagueId || !seasons.length}
+              disabled={!seasons.length}
               onChange={(e) => setSeasonId(e.target.value)}
               style={{
                 width: "100%",

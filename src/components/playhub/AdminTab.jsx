@@ -2,9 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { fetchJson } from "../../utils/api.js";
 
 export default function AdminTab({
-  leagueId,
   seasonId,
-  onLeagueChanged,
   onSeasonChanged,
   onLeagueCreated,
   onDataChanged,
@@ -14,8 +12,6 @@ export default function AdminTab({
   const [err, setErr] = useState(null);
   const [loading, setLoading] = useState(false);
   const [seasonMeta, setSeasonMeta] = useState(null);
-  const [resolvedLeagueId, setResolvedLeagueId] = useState(null);
-
   const [seasonName, setSeasonName] = useState("");
 
   const [weekIndex, setWeekIndex] = useState("1"); // legacy test generator
@@ -77,30 +73,6 @@ export default function AdminTab({
     loadCurrentWeek();
     loadSubRequests();
   }, [seasonId]);
-
-  // The site is the league. Resolve the internal leagueId automatically for admin operations.
-  useEffect(() => {
-    let alive = true;
-    async function resolve() {
-      if (leagueId) {
-        setResolvedLeagueId(leagueId);
-        return;
-      }
-      try {
-        const d = await fetchJson("/api/leagues");
-        const first = (d.leagues || [])[0];
-        if (alive) setResolvedLeagueId(first?.id || null);
-      } catch {
-        if (alive) setResolvedLeagueId(null);
-      }
-    }
-    resolve();
-    return () => {
-      alive = false;
-    };
-  }, [leagueId]);
-
-  const effectiveLeagueId = leagueId || resolvedLeagueId;
 
   useEffect(() => {
     let alive = true;
@@ -266,11 +238,11 @@ export default function AdminTab({
   }
 
   async function makeCurrentSeason() {
-    if (!effectiveLeagueId || !seasonId) return;
+    if (!seasonId) return;
     setLoading(true);
     setErr(null);
     try {
-      await fetchJson(`/api/leagues/${effectiveLeagueId}/set-current-season`, {
+      await fetchJson(`/api/league/set-current-season`, {
         method: "POST",
         body: JSON.stringify({ seasonId })
       });
@@ -284,12 +256,12 @@ export default function AdminTab({
   }
 
   async function publishSeason({ overwrite = false } = {}) {
-    if (!seasonId || !effectiveLeagueId) return;
+    if (!seasonId) return;
     setLoading(true);
     setErr(null);
     try {
       // Ensure this is the current season (phase = REGULAR)
-      await fetchJson(`/api/leagues/${effectiveLeagueId}/set-current-season`, {
+      await fetchJson(`/api/league/set-current-season`, {
         method: "POST",
         body: JSON.stringify({ seasonId })
       });
@@ -406,7 +378,7 @@ export default function AdminTab({
               {seasonMeta?.phase ? <span> • Phase: {seasonMeta.phase}</span> : null}
             </div>
             <div className="row" style={{ flexWrap: "wrap" }}>
-              <button disabled={loading || !effectiveLeagueId} onClick={makeCurrentSeason}>
+              <button disabled={loading} onClick={makeCurrentSeason}>
                 Make Current Season
               </button>
               <button disabled={loading || !seasonId} onClick={() => publishSeason({ overwrite: false })}>

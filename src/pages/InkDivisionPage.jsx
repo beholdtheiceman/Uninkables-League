@@ -52,13 +52,7 @@ export default function InkDivisionPage() {
       setLoading(true);
       setErr(null);
       try {
-        const leagues = await fetchJson("/api/leagues");
-        const only = (leagues.leagues || [])[0];
-        if (!only?.id) {
-          if (alive) setCurrentSeasonId(null);
-          return;
-        }
-        const detail = await fetchJson(`/api/leagues/${only.id}`);
+        const detail = await fetchJson(`/api/league`);
         if (alive) setCurrentSeasonId(detail?.league?.currentSeasonId || null);
       } catch (e) {
         if (alive) setErr(e.message);
