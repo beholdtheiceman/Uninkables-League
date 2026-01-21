@@ -122,8 +122,6 @@ export default function PlayHub({
         el: (
           <AdminTab
             {...ctx}
-            leaguesLoaded={leaguesLoaded}
-            leagueCount={leagues.length}
             onLeagueChanged={setLeagueId}
             onSeasonChanged={setSeasonId}
             onLeagueCreated={(league) => setLeagues((prev) => [league, ...prev])}

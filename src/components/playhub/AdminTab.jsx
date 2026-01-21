@@ -6,16 +6,12 @@ export default function AdminTab({
   seasonId,
   onLeagueChanged,
   onSeasonChanged,
-  onLeagueCreated,
-  leaguesLoaded = false,
-  leagueCount = 0
+  onLeagueCreated
 }) {
   const [err, setErr] = useState(null);
   const [loading, setLoading] = useState(false);
   const [seasonMeta, setSeasonMeta] = useState(null);
 
-  const [leagueName, setLeagueName] = useState("");
-  const [leagueDescription, setLeagueDescription] = useState("");
   const [seasonName, setSeasonName] = useState("");
 
   const [weekIndex, setWeekIndex] = useState("1"); // legacy test generator
@@ -118,29 +114,6 @@ export default function AdminTab({
     () => allPairings.filter(({ pairing }) => pairing.state !== "FINAL"),
     [allPairings]
   );
-
-  async function createLeague() {
-    if (!leagueName.trim()) return;
-    setLoading(true);
-    setErr(null);
-    try {
-      const d = await fetchJson("/api/leagues", {
-        method: "POST",
-        body: JSON.stringify({
-          name: leagueName.trim(),
-          description: leagueDescription.trim() || undefined
-        })
-      });
-      if (d?.league) onLeagueCreated?.(d.league);
-      onLeagueChanged(d.league.id);
-      setLeagueName("");
-      setLeagueDescription("");
-    } catch (e) {
-      setErr(e.message);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function createSeason() {
     if (!leagueId) return;
@@ -348,8 +321,6 @@ export default function AdminTab({
     }
   }
 
-  const showCreateLeague = leaguesLoaded && leagueCount === 0;
-
   return (
     <div style={{ display: "grid", gap: 12 }}>
       <div className="card" style={{ display: "grid", gap: 10 }}>
@@ -359,20 +330,6 @@ export default function AdminTab({
         </div>
         {err ? <div style={{ color: "#ff9aa2" }}>{err}</div> : null}
       </div>
-
-      {showCreateLeague ? (
-        <div className="card" style={{ display: "grid", gap: 10 }}>
-          <strong>Create League</strong>
-          <div style={{ fontSize: 12, opacity: 0.8 }}>
-            One-time setup for a brand-new database (no league exists yet).
-          </div>
-          <input value={leagueName} onChange={(e) => setLeagueName(e.target.value)} placeholder="League name" />
-          <input value={leagueDescription} onChange={(e) => setLeagueDescription(e.target.value)} placeholder="Description (optional)" />
-          <button disabled={loading || !leagueName.trim()} onClick={createLeague}>
-            {loading ? "Creating..." : "Create league"}
-          </button>
-        </div>
-      ) : null}
 
       <div className="card" style={{ display: "grid", gap: 10 }}>
         <strong>Create Season</strong>

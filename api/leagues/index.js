@@ -47,22 +47,9 @@ export default async function handler(req, res) {
   }
 
   if (req.method === "POST") {
-    const admin = await requireAdmin(req);
-    if (!admin.ok) return json(res, admin.status, { error: admin.error });
-
-    const Body = z.object({
-      name: z.string().min(1),
-      description: z.string().optional()
-    });
-
-    const body = Body.parse(await readJson(req));
-
-    const league = await prisma.league.create({
-      data: { name: body.name, description: body.description || null },
-      select: { id: true, name: true, description: true, createdAt: true, updatedAt: true }
-    });
-
-    return json(res, 200, { league });
+    // This app is intended to run a single existing league.
+    // Prevent accidental creation of duplicate leagues via the UI/API.
+    return json(res, 405, { error: "League creation is disabled" });
   }
 
   return json(res, 405, { error: "Method not allowed" });
