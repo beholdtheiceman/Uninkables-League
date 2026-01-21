@@ -410,7 +410,7 @@ export default function AdminTab({ leagueId, seasonId, onLeagueChanged, onSeason
       <div className="card" style={{ display: "grid", gap: 10 }}>
         <strong>Generate Week (test generator)</strong>
         <div style={{ fontSize: 12, opacity: 0.8 }}>
-          Legacy single-week generator (pairs teams alphabetically). Prefer "Generate Full Schedule".
+          Test single-week generator (pairs teams alphabetically). Prefer "Generate Full Schedule".
         </div>
         <div className="row">
           <input value={weekIndex} onChange={(e) => setWeekIndex(e.target.value)} placeholder="Week index" />

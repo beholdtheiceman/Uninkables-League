@@ -27,7 +27,7 @@ function useStickyState(key, initial) {
   return [value, setValue];
 }
 
-export default function PlayHub({ tab, onTabChange }) {
+export default function PlayHub({ tab, onTabChange, hideTabs = false }) {
   const { user } = useAuth();
 
   const [leagueId, setLeagueId] = useStickyState("playhub.leagueId", "");
@@ -174,20 +174,22 @@ export default function PlayHub({ tab, onTabChange }) {
       {loading ? <div style={{ opacity: 0.8 }}>Loading…</div> : null}
       {err ? <div style={{ color: "#ff9aa2" }}>{err}</div> : null}
 
-      <div className="tabs" style={{ marginTop: 4 }}>
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            className={active === t.key ? "tab tabActive" : "tab"}
-            onClick={() => {
-              setActive(t.key);
-              onTabChange?.(t.key);
-            }}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      {!hideTabs ? (
+        <div className="tabs" style={{ marginTop: 4 }}>
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              className={active === t.key ? "tab tabActive" : "tab"}
+              onClick={() => {
+                setActive(t.key);
+                onTabChange?.(t.key);
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       <div style={{ marginTop: 4 }}>{tabs.find((t) => t.key === active)?.el}</div>
     </div>

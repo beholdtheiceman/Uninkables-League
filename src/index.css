@@ -13,7 +13,7 @@ body {
 
 a { color: inherit; }
 
-/* Site navigation (THL-style multi-level dropdown) */
+/* Site navigation (multi-level dropdown) */
 .siteNav {
   position: sticky;
   top: 0;
@@ -198,6 +198,20 @@ a { color: inherit; }
 }
 @media (max-width: 920px) {
   .grid2 { grid-template-columns: 1fr; }
+}
+
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+@media (max-width: 920px) {
+  .grid3 { grid-template-columns: 1fr; }
+}
+
+.linkCard:hover {
+  border-color: rgba(120,160,255,0.35);
+  background: rgba(120,160,255,0.10);
 }
 
 button {

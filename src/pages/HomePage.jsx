@@ -10,7 +10,7 @@ export default function HomePage() {
       <section className="card">
         <div style={{ fontSize: 20, fontWeight: 800 }}>Uninkables League Hub</div>
         <div style={{ opacity: 0.75, marginTop: 6 }}>
-          Routed site scaffolding (Option B) — navigation mirrors the THL pattern.
+          Routed site scaffolding — navigation is Lorcana-themed (ink divisions).
         </div>
       </section>
 
