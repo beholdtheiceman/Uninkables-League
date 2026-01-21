@@ -42,6 +42,7 @@ export default function PlayHub({
   const [leagues, setLeagues] = useState([]);
   const [leaguesLoaded, setLeaguesLoaded] = useState(false);
   const [leagueDetail, setLeagueDetail] = useState(null);
+  const [leagueDetailVersion, setLeagueDetailVersion] = useState(0);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
 
@@ -93,7 +94,9 @@ export default function PlayHub({
     return () => {
       alive = false;
     };
-  }, [leagueId]);
+  }, [leagueId, leagueDetailVersion]);
+
+  const refreshLeagueDetail = () => setLeagueDetailVersion((v) => v + 1);
 
   // keep seasonId valid for selected league
   useEffect(() => {
@@ -125,6 +128,7 @@ export default function PlayHub({
         el: (
           <AdminTab
             {...ctx}
+            onDataChanged={refreshLeagueDetail}
             onLeagueChanged={setLeagueId}
             onSeasonChanged={setSeasonId}
             onLeagueCreated={(league) => setLeagues((prev) => [league, ...prev])}

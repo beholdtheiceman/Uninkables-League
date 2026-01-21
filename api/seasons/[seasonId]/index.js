@@ -89,5 +89,19 @@ export default async function handler(req, res) {
     return json(res, 200, { season });
   }
 
+  if (req.method === "DELETE") {
+    const existing = await prisma.season.findUnique({
+      where: { id: seasonId },
+      select: { id: true, leagueId: true, name: true }
+    });
+    if (!existing) return json(res, 404, { error: "Season not found" });
+
+    const admin = await requireAdmin(req, existing.leagueId);
+    if (!admin.ok) return json(res, admin.status, { error: admin.error });
+
+    await prisma.season.delete({ where: { id: seasonId } });
+    return json(res, 200, { ok: true });
+  }
+
   return json(res, 405, { error: "Method not allowed" });
 }

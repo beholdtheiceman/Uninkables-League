@@ -6,7 +6,8 @@ export default function AdminTab({
   seasonId,
   onLeagueChanged,
   onSeasonChanged,
-  onLeagueCreated
+  onLeagueCreated,
+  onDataChanged
 }) {
   const [err, setErr] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -150,7 +151,30 @@ export default function AdminTab({
         body: JSON.stringify({ name: seasonName.trim() })
       });
       onSeasonChanged(d.season.id);
+      onDataChanged?.();
       setSeasonName("");
+    } catch (e) {
+      setErr(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function deleteSeason() {
+    if (!seasonId) return;
+    const name = seasonMeta?.name || "this season";
+    const ok = window.confirm(
+      `Are you sure you want to delete "${name}"?\n\nThis will permanently delete weeks, matchups, pairings, standings events, teams, and rosters for the season. This cannot be undone.`
+    );
+    if (!ok) return;
+
+    setLoading(true);
+    setErr(null);
+    try {
+      await fetchJson(`/api/seasons/${seasonId}`, { method: "DELETE" });
+      setSeasonMeta(null);
+      onSeasonChanged("");
+      onDataChanged?.();
     } catch (e) {
       setErr(e.message);
     } finally {
@@ -389,6 +413,9 @@ export default function AdminTab({
               </button>
               <button disabled={loading || !seasonId} onClick={finalizeAndOpenNextWeek}>
                 Finalize Current Week & Open Next
+              </button>
+              <button disabled={loading || !seasonId} onClick={deleteSeason}>
+                Delete season
               </button>
             </div>
           </>
