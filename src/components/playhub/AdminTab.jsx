@@ -11,6 +11,7 @@ export default function AdminTab({
   const [err, setErr] = useState(null);
   const [loading, setLoading] = useState(false);
   const [seasonMeta, setSeasonMeta] = useState(null);
+  const [resolvedLeagueId, setResolvedLeagueId] = useState(null);
 
   const [seasonName, setSeasonName] = useState("");
 
@@ -74,6 +75,30 @@ export default function AdminTab({
     loadSubRequests();
   }, [seasonId]);
 
+  // The site is the league. Resolve the internal leagueId automatically for admin operations.
+  useEffect(() => {
+    let alive = true;
+    async function resolve() {
+      if (leagueId) {
+        setResolvedLeagueId(leagueId);
+        return;
+      }
+      try {
+        const d = await fetchJson("/api/leagues");
+        const first = (d.leagues || [])[0];
+        if (alive) setResolvedLeagueId(first?.id || null);
+      } catch {
+        if (alive) setResolvedLeagueId(null);
+      }
+    }
+    resolve();
+    return () => {
+      alive = false;
+    };
+  }, [leagueId]);
+
+  const effectiveLeagueId = leagueId || resolvedLeagueId;
+
   useEffect(() => {
     let alive = true;
     async function loadSeasonMeta() {
@@ -116,12 +141,15 @@ export default function AdminTab({
   );
 
   async function createSeason() {
-    if (!leagueId) return;
+    if (!effectiveLeagueId) {
+      setErr("No league found in the database.");
+      return;
+    }
     if (!seasonName.trim()) return;
     setLoading(true);
     setErr(null);
     try {
-      const d = await fetchJson(`/api/leagues/${leagueId}/seasons`, {
+      const d = await fetchJson(`/api/leagues/${effectiveLeagueId}/seasons`, {
         method: "POST",
         body: JSON.stringify({ name: seasonName.trim() })
       });
@@ -214,11 +242,11 @@ export default function AdminTab({
   }
 
   async function makeCurrentSeason() {
-    if (!leagueId || !seasonId) return;
+    if (!effectiveLeagueId || !seasonId) return;
     setLoading(true);
     setErr(null);
     try {
-      await fetchJson(`/api/leagues/${leagueId}/set-current-season`, {
+      await fetchJson(`/api/leagues/${effectiveLeagueId}/set-current-season`, {
         method: "POST",
         body: JSON.stringify({ seasonId })
       });
@@ -232,12 +260,12 @@ export default function AdminTab({
   }
 
   async function publishSeason({ overwrite = false } = {}) {
-    if (!seasonId || !leagueId) return;
+    if (!seasonId || !effectiveLeagueId) return;
     setLoading(true);
     setErr(null);
     try {
       // Ensure this is the current season (phase = REGULAR)
-      await fetchJson(`/api/leagues/${leagueId}/set-current-season`, {
+      await fetchJson(`/api/leagues/${effectiveLeagueId}/set-current-season`, {
         method: "POST",
         body: JSON.stringify({ seasonId })
       });
@@ -337,7 +365,7 @@ export default function AdminTab({
           This league hosts multiple seasons. Create a new season here.
         </div>
         <input value={seasonName} onChange={(e) => setSeasonName(e.target.value)} placeholder="Season name (e.g., 2026 S1)" />
-        <button disabled={loading || !leagueId} onClick={createSeason}>Create season</button>
+        <button disabled={loading || !effectiveLeagueId} onClick={createSeason}>Create season</button>
       </div>
 
       <div className="card" style={{ display: "grid", gap: 10 }}>
@@ -354,7 +382,7 @@ export default function AdminTab({
               {seasonMeta?.phase ? <span> • Phase: {seasonMeta.phase}</span> : null}
             </div>
             <div className="row" style={{ flexWrap: "wrap" }}>
-              <button disabled={loading || !leagueId} onClick={makeCurrentSeason}>
+              <button disabled={loading || !effectiveLeagueId} onClick={makeCurrentSeason}>
                 Make Current Season
               </button>
               <button disabled={loading || !seasonId} onClick={() => publishSeason({ overwrite: false })}>
