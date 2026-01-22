@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useNavigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext.jsx";
 import SiteNav from "./components/SiteNav.jsx";
@@ -10,6 +10,7 @@ import SectionPage from "./pages/SectionPage.jsx";
 import CurrentSeasonLandingPage from "./pages/CurrentSeasonLandingPage.jsx";
 import InkDivisionPage from "./pages/InkDivisionPage.jsx";
 import PlayerDirectoryPage from "./pages/PlayerDirectoryPage.jsx";
+import PrCalculatorPage from "./pages/PrCalculatorPage.jsx";
 
 function AppLayout() {
   const { user, loading } = useAuth();
@@ -54,6 +55,7 @@ export default function App() {
             <Route path="current-season/:ink" element={<Navigate to="/current-season" replace />} />
             <Route path="current-season/player-directory" element={<PlayerDirectoryPage />} />
 
+            <Route path="resources/pr-calculator" element={<PrCalculatorPage />} />
             <Route path="resources/*" element={<SectionPage baseTitle="Resources" />} />
             <Route path="contact" element={<SimplePage title="Contact Us" />} />
 

@@ -111,7 +111,7 @@ export default function TeamsTab({ seasonId }) {
                 {t.rosterSlots?.length ? (
                   <div style={{ marginTop: 8, fontSize: 12, opacity: 0.9 }}>
                     {t.rosterSlots.map((s) => (
-                      <div key={s.id}>Seed {s.slotIndex}: {s.user?.email || s.userId} (submit {s.mmrAtSubmit}, lock {s.mmrAtLock ?? "â€”"})</div>
+                      <div key={s.id}>Seed {s.slotIndex}: {s.user?.email || s.userId} (PR submit {s.mmrAtSubmit}, PR lock {s.mmrAtLock ?? "—"})</div>
                     ))}
                   </div>
                 ) : (

@@ -139,9 +139,9 @@ model Season {
   phase    SeasonPhase @default(OFFSEASON)
 
   rosterSize          Int @default(5)
-  preseasonTeamMmrCap Int @default(1600)
+  preseasonTeamMmrCap Int @default(1850)
   mmrMin              Int @default(100)
-  mmrMax              Int @default(500)
+  mmrMax              Int @default(600)
   regularWeeks        Int @default(16)
   playoffWeeks        Int @default(4)
   offseasonWeeks      Int @default(4)

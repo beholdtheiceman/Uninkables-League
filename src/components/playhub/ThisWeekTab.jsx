@@ -163,7 +163,7 @@ export default function ThisWeekTab({ seasonId }) {
               {matchup.teamA?.name} vs {matchup.teamB?.name} â€” Seed {pairing.seedIndex}
             </div>
             <div style={{ fontSize: 12, opacity: 0.85, marginTop: 4 }}>
-              {pairing.playerA?.email} ({pairing.mmrAAtCreate}) vs {pairing.playerB?.email} ({pairing.mmrBAtCreate})
+              {pairing.playerA?.email} (PR {pairing.mmrAAtCreate}) vs {pairing.playerB?.email} (PR {pairing.mmrBAtCreate})
             </div>
             <div style={{ fontSize: 12, opacity: 0.85, marginTop: 4 }}>
               State: {pairing.state} â€¢ Scheduled: {pairing.scheduledFor ? new Date(pairing.scheduledFor).toLocaleString() : "â€”"}

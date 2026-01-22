@@ -2,6 +2,7 @@ import { z } from "zod";
 import { prisma } from "../../../../_lib/db.js";
 import { json, readJson } from "../../../../_lib/http.js";
 import { requireAdmin, requireAuth } from "../../../../_lib/playhubAuth.js";
+import { toDisplayedPr } from "../../../../_lib/pr.js";
 
 const Slot = z
   .object({
@@ -57,7 +58,7 @@ export default async function handler(req, res) {
       id: true,
       seasonId: true,
       captainUserId: true,
-      season: { select: { id: true, leagueId: true, preseasonTeamMmrCap: true } }
+      season: { select: { id: true, leagueId: true, preseasonTeamMmrCap: true, mmrMin: true, mmrMax: true } }
     }
   });
   if (!team || team.seasonId !== seasonId) return json(res, 404, { error: "Team not found" });
@@ -91,12 +92,14 @@ export default async function handler(req, res) {
   // Ensure ratings exist and compute cap
   const userIds = Array.from(userSet);
   const mmrMap = await ensureRatings(team.season.leagueId, userIds);
-  const total = userIds.reduce((sum, id) => sum + (mmrMap.get(id) ?? 250), 0);
+  const bounds = { min: team.season.mmrMin ?? 100, max: team.season.mmrMax ?? 600 };
+  const displayedMap = new Map(userIds.map((id) => [id, toDisplayedPr(mmrMap.get(id) ?? 250, bounds)]));
+  const total = userIds.reduce((sum, id) => sum + (displayedMap.get(id) ?? 250), 0);
 
   if (total > team.season.preseasonTeamMmrCap) {
     return json(res, 400, {
       error: `Preseason cap exceeded: ${total} > ${team.season.preseasonTeamMmrCap}`,
-      totalMmr: total
+      totalPr: total
     });
   }
 
@@ -107,7 +110,8 @@ export default async function handler(req, res) {
       seasonTeamId: teamId,
       slotIndex: s.slotIndex,
       userId: s.userId,
-      mmrAtSubmit: mmrMap.get(s.userId) ?? 250,
+      // Store displayed PR at submit time (clamped), to match team-building rules/caps.
+      mmrAtSubmit: displayedMap.get(s.userId) ?? 250,
       mmrAtLock: null,
       isActive: true
     }))
@@ -118,5 +122,5 @@ export default async function handler(req, res) {
     data: { rosterSubmittedAt: new Date(), rosterApprovedAt: null }
   });
 
-  return json(res, 200, { ok: true, totalMmr: total });
+  return json(res, 200, { ok: true, totalPr: total });
 }

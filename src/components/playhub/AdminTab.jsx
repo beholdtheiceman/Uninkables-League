@@ -21,6 +21,9 @@ export default function AdminTab({
   const [weekDetail, setWeekDetail] = useState(null);
   const [subRequests, setSubRequests] = useState([]);
 
+  const [prEmail, setPrEmail] = useState("");
+  const [prHidden, setPrHidden] = useState("250");
+
   async function loadTeams() {
     if (!seasonId) return;
     setLoading(true);
@@ -128,6 +131,28 @@ export default function AdminTab({
       onSeasonCreated?.(d.season);
       onDataChanged?.();
       setSeasonName("");
+    } catch (e) {
+      setErr(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function setInitialPr() {
+    if (!prEmail.trim()) return;
+    const n = Number(prHidden);
+    if (!Number.isFinite(n) || !Number.isInteger(n) || n < 0) {
+      setErr("Hidden PR must be a whole number ≥ 0");
+      return;
+    }
+    setLoading(true);
+    setErr(null);
+    try {
+      await fetchJson(`/api/league/ratings/set-initial`, {
+        method: "POST",
+        body: JSON.stringify({ email: prEmail.trim(), hiddenPr: n })
+      });
+      setPrEmail("");
     } catch (e) {
       setErr(e.message);
     } finally {
@@ -367,6 +392,30 @@ export default function AdminTab({
       </div>
 
       <div className="card" style={{ display: "grid", gap: 10 }}>
+        <strong>Set Initial PR (Admin)</strong>
+        <div style={{ fontSize: 12, opacity: 0.8 }}>
+          Sets a user’s <em>hidden</em> PR (displayed PR is clamped to 100–600). Use the PR Calculator to compute a value, then paste it here.
+        </div>
+        <div className="row" style={{ flexWrap: "wrap" }}>
+          <input
+            value={prEmail}
+            onChange={(e) => setPrEmail(e.target.value)}
+            placeholder="player email"
+            style={{ minWidth: 260, flex: 1 }}
+          />
+          <input
+            value={prHidden}
+            onChange={(e) => setPrHidden(e.target.value)}
+            placeholder="hidden PR"
+            style={{ width: 140 }}
+          />
+          <button disabled={loading} onClick={setInitialPr}>
+            Set PR
+          </button>
+        </div>
+      </div>
+
+      <div className="card" style={{ display: "grid", gap: 10 }}>
         <strong>Season Admin</strong>
         <div style={{ fontSize: 12, opacity: 0.8 }}>
           Publish the season inside the site (no spreadsheets): set current season, generate schedule, open/finalize weeks.
@@ -522,7 +571,7 @@ export default function AdminTab({
       <div className="card" style={{ display: "grid", gap: 10 }}>
         <strong>Finalize Current Week</strong>
         <div style={{ fontSize: 12, opacity: 0.8 }}>
-          Writes points/MMR ledgers and locks the current OPEN week to FINAL (requires all pairings FINAL).
+          Writes points/PR ledgers and locks the current OPEN week to FINAL (requires all pairings FINAL).
         </div>
         <button disabled={loading || !seasonId} onClick={finalizeCurrentWeek}>Finalize</button>
       </div>

@@ -46,13 +46,20 @@ export default async function handler(req, res) {
     data: {
       leagueId: league.id,
       name: body.name,
-      phase: body.phase
+      phase: body.phase,
+      // PR system defaults (explicit here so we don't rely on DB column defaults/migrations).
+      preseasonTeamMmrCap: 1850,
+      mmrMin: 100,
+      mmrMax: 600
     },
     select: {
       id: true,
       leagueId: true,
       name: true,
       phase: true,
+      preseasonTeamMmrCap: true,
+      mmrMin: true,
+      mmrMax: true,
       createdAt: true,
       updatedAt: true
     }

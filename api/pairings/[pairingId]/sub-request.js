@@ -3,6 +3,7 @@ import { prisma } from "../../_lib/db.js";
 import { json, readJson } from "../../_lib/http.js";
 import { requireAdmin, requireAuth } from "../../_lib/playhubAuth.js";
 import { computeWeekDeadlines, isPast } from "../../_lib/deadlines.js";
+import { toDisplayedPr } from "../../_lib/pr.js";
 
 const Body = z
   .object({
@@ -44,7 +45,9 @@ export default async function handler(req, res) {
                   timezone: true,
                   subDeadlineDow: true,
                   scheduleDeadlineDow: true,
-                  resultsDeadlineDow: true
+                  resultsDeadlineDow: true,
+                  mmrMin: true,
+                  mmrMax: true
                 }
               }
             }
@@ -122,8 +125,12 @@ export default async function handler(req, res) {
   const replacedMmr = await ensureRating(replacesUserId);
   const subMmr = await ensureRating(subUserId);
 
-  if (subMmr > replacedMmr) {
-    return json(res, 400, { error: `Sub MMR must be <= replaced player MMR (${subMmr} > ${replacedMmr})` });
+  const bounds = { min: season.mmrMin ?? 100, max: season.mmrMax ?? 600 };
+  const replacedPr = toDisplayedPr(replacedMmr, bounds);
+  const subPr = toDisplayedPr(subMmr, bounds);
+
+  if (subPr > replacedPr) {
+    return json(res, 400, { error: `Sub PR must be <= replaced player PR (${subPr} > ${replacedPr})` });
   }
 
   const created = await prisma.substitutionRequest.create({
@@ -133,8 +140,8 @@ export default async function handler(req, res) {
       replacesSide,
       replacesUserId,
       subUserId,
-      replacedMmrAtRequest: replacedMmr,
-      subMmrAtRequest: subMmr,
+      replacedMmrAtRequest: replacedPr,
+      subMmrAtRequest: subPr,
       status: "PENDING",
       requestedByUserId: auth.user.id,
       note: body.note || null

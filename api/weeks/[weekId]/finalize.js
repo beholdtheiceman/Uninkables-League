@@ -1,10 +1,7 @@
 import { prisma } from "../../_lib/db.js";
 import { json } from "../../_lib/http.js";
 import { requireAdmin } from "../../_lib/playhubAuth.js";
-
-function clamp(n, min, max) {
-  return Math.max(min, Math.min(max, n));
-}
+import { computePrDeltaA } from "../../_lib/pr.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return json(res, 405, { error: "Method not allowed" });
@@ -71,11 +68,6 @@ export default async function handler(req, res) {
     });
   }
 
-  const matchWinDelta = Number(process.env.PLAYHUB_MATCH_WIN_DELTA || 10);
-
-  const mmrMin = week.season.mmrMin;
-  const mmrMax = week.season.mmrMax;
-
   const pointsEvents = [];
   const teamWeekPoints = new Map(); // teamId -> points (excluding bonus)
 
@@ -131,9 +123,10 @@ export default async function handler(req, res) {
       matchupAgg.a += aWon ? 1 : 0;
       matchupAgg.b += aWon ? 0 : 1;
 
-      // MMR deltas (+/- matchWinDelta)
-      mmrDeltas.set(p.playerAId, (mmrDeltas.get(p.playerAId) || 0) + (aWon ? matchWinDelta : -matchWinDelta));
-      mmrDeltas.set(p.playerBId, (mmrDeltas.get(p.playerBId) || 0) + (aWon ? -matchWinDelta : matchWinDelta));
+      // Placeholder MMR deltas; replaced later once we know "before" ratings.
+      // Keep a marker so we have all participants; actual PR deltas are computed inside the transaction.
+      mmrDeltas.set(p.playerAId, (mmrDeltas.get(p.playerAId) || 0) + 0);
+      mmrDeltas.set(p.playerBId, (mmrDeltas.get(p.playerBId) || 0) + 0);
     }
 
     perMatchupPoints.set(matchup.id, matchupAgg);
@@ -210,13 +203,29 @@ export default async function handler(req, res) {
       data: pointsEvents
     });
 
-    // Apply MMR updates + write MMREvents
+    // Compute PR deltas (ELO-inspired) + write MMREvents.
+    // We treat LeagueRating.mmr as the hidden PR, and clamp to [mmrMin..mmrMax] only for display elsewhere.
     const mmrEvents = [];
+
+    // Compute per-pairing delta based on current hidden ratings ("before" map).
+    for (const matchup of week.matchups) {
+      for (const p of matchup.pairings) {
+        const beforeA = beforeMap.get(p.playerAId) ?? 250;
+        const beforeB = beforeMap.get(p.playerBId) ?? 250;
+
+        const deltaA = computePrDeltaA(beforeA, beforeB, p.gamesWonA, p.gamesWonB, 25);
+        const deltaB = -deltaA;
+
+        mmrDeltas.set(p.playerAId, (mmrDeltas.get(p.playerAId) || 0) + deltaA);
+        mmrDeltas.set(p.playerBId, (mmrDeltas.get(p.playerBId) || 0) + deltaB);
+      }
+    }
 
     for (const uid of userIds) {
       const before = beforeMap.get(uid) ?? 250;
       const delta = mmrDeltas.get(uid) || 0;
-      const after = clamp(before + delta, mmrMin, mmrMax);
+      // Store hidden PR without clamping so we can track beyond 100..600 internally.
+      const after = before + delta;
 
       // Update rating
       await tx.leagueRating.update({
