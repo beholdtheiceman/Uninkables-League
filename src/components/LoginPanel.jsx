@@ -51,11 +51,19 @@ export default function LoginPanel() {
         <div>Signed in as <strong>{user.email}</strong></div>
       ) : (
         <>
-          <div style={{ display: "grid", gap: 8 }}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!busy) submit();
+            }}
+            style={{ display: "grid", gap: 8 }}
+          >
             <input placeholder="email" value={email} onChange={(e) => setEmail(e.target.value)} />
             <input placeholder="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-            <button disabled={busy} onClick={submit}>{busy ? "Working..." : mode === "login" ? "Login" : "Create account"}</button>
-          </div>
+            <button disabled={busy} type="submit">
+              {busy ? "Working..." : mode === "login" ? "Login" : "Create account"}
+            </button>
+          </form>
           {err ? <div style={{ color: "#ff9aa2" }}>{err}</div> : null}
         </>
       )}
