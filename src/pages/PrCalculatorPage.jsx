@@ -125,7 +125,7 @@ function pointsFor(bucket, placement) {
   return POINTS[bucket]?.[placement] ?? 0;
 }
 
-function Row({ row, onChange, onRemove, showName }) {
+function Row({ row, onChange, onRemove, showName, showSet }) {
   const placements = PLACEMENTS_BY_BUCKET[row.sizeBucket] || [];
   return (
     <div className="row" style={{ gap: 10, flexWrap: "wrap", alignItems: "end" }}>
@@ -133,6 +133,16 @@ function Row({ row, onChange, onRemove, showName }) {
         <div style={{ minWidth: 220, flex: 1 }}>
           <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 6 }}>Tournament</div>
           <input value={row.name} onChange={(e) => onChange({ ...row, name: e.target.value })} placeholder="Tournament name" />
+        </div>
+      ) : null}
+      {showSet ? (
+        <div style={{ minWidth: 140 }}>
+          <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 6 }}>Set</div>
+          <select value={row.set ?? ""} onChange={(e) => onChange({ ...row, set: e.target.value })}>
+            <option value="">Select set…</option>
+            <option value="9">Set 9</option>
+            <option value="10">Set 10</option>
+          </select>
         </div>
       ) : null}
       <div style={{ minWidth: 180 }}>
@@ -235,6 +245,7 @@ export default function PrCalculatorPage() {
                 key={r.id}
                 row={r}
                 showName={true}
+                showSet={true}
                 onChange={(next) => setOthers((prev) => prev.map((x, i) => (i === idx ? next : x)))}
                 onRemove={() => setOthers((prev) => prev.filter((x) => x.id !== r.id))}
               />
@@ -245,7 +256,7 @@ export default function PrCalculatorPage() {
         )}
         <button
           type="button"
-          onClick={() => setOthers((prev) => [...prev, { id: `o-${Date.now()}`, name: "", sizeBucket: "", placement: "" }])}
+          onClick={() => setOthers((prev) => [...prev, { id: `o-${Date.now()}`, set: "10", name: "", sizeBucket: "", placement: "" }])}
         >
           Add tournament
         </button>
