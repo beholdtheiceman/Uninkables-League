@@ -2,6 +2,7 @@ import { z } from "zod";
 import { prisma } from "../_lib/db.js";
 import { json, readJson } from "../_lib/http.js";
 import { requireAdmin } from "../_lib/playhubAuth.js";
+import { getPrimaryLeague } from "../_lib/singleLeague.js";
 
 const Body = z.object({
   name: z.string().min(1),
@@ -14,11 +15,7 @@ export default async function handler(req, res) {
     return json(res, 204, {});
   }
 
-  // Single-league app: pick the primary league (most recently created).
-  const league = await prisma.league.findFirst({
-    orderBy: { createdAt: "desc" },
-    select: { id: true }
-  });
+  const league = await getPrimaryLeague();
   if (!league) return json(res, 400, { error: "No league found in the database" });
 
   if (req.method === "GET") {
