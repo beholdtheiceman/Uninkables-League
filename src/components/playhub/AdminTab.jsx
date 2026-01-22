@@ -246,6 +246,7 @@ export default function AdminTab({
         method: "POST",
         body: JSON.stringify({ seasonId })
       });
+      onDataChanged?.(); // refresh league/seasons so dropdown phase updates immediately
       const d = await fetchJson(`/api/seasons/${seasonId}`);
       setSeasonMeta(d.season || null);
     } catch (e) {
@@ -265,6 +266,7 @@ export default function AdminTab({
         method: "POST",
         body: JSON.stringify({ seasonId })
       });
+      onDataChanged?.(); // refresh dropdown phase/currentSeasonId before further actions
 
       // Generate schedule
       await fetchJson(`/api/seasons/${seasonId}/weeks/generate-schedule`, {
